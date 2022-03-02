@@ -20,7 +20,6 @@ https://data.worldbank.org/topic/19
 EM-DAT: Data of disasters worldwide since 1900. Includes type of disaster, a record of when it happened, when the records were last updated, where the events happened, etc. They also include certain subgroups that may be used to indicate compounded nature. If an earthquake caused ground shaking and a subsequent tsunami, this may be counted as one disaster that resulted in two subtypes of disaster.
 https://public.emdat.be/about
 
-Any data still needed: ?
 
 <b> Group Member Information </b> <br>
 Gamze Bilsen: gb2467@columbia.edu <br>
