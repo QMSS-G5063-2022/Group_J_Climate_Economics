@@ -21,3 +21,8 @@ EM-DAT: Data of disasters worldwide since 1900. Includes type of disaster, a rec
 https://public.emdat.be/about
 
 Any data still needed: ?
+
+<b> Group Member Information </b> <br>
+Gamze Bilsen: gb2467@columbia.edu <br>
+Sehrish Mastoor: shm2166@columbia.edu <br>
+Sierra Cheung: sgc2143@columbia.edu
