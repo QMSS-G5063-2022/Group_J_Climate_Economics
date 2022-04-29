@@ -1,0 +1,349 @@
+---
+title: "Final Project"
+author: "Sehrish Mastoor"
+date: "4/27/2022"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(tidymodels)
+library(tidyverse)
+library(tidytext)
+library(ggplot2)
+library(plotly)
+library(DT)
+library(readr)
+library(raster)
+library(htmlwidgets)
+library(rgdal)
+library(sf)
+library(ggmap)
+library(tmap)
+library(maps)
+library(DT)
+library(leaflet)
+vignette(package = "tmap") # available vignettes in tmap
+vignette("tmap-nutshell")
+library(ggplot2)    
+library(magrittr)
+library(dplyr)
+library(ggthemes)
+library(ggpubr)
+library(tidyverse)
+library(plotly)
+library(DT)
+library(ggalt)   
+library(ggrepel)
+library(rvest)
+library(stringr)
+library(plotly)
+library(paletteer)
+library(RColorBrewer)
+library(ggplot2)    
+library(magrittr)
+library(dplyr)
+library(ggthemes)
+library(ggpubr)
+library(tidyverse)
+library(plotly)
+library(DT)
+library(ggalt)   
+library(ggrepel)
+library(rvest)
+library(stringr)
+library(plotly)
+
+```
+
+```{r}
+#Load the data 
+df<- read_csv("final_to_use.csv")
+```
+
+```{r}
+## GDP for the year 2020 
+gdp <- df %>%
+  filter(Year == "2015") %>%
+    group_by(Country, GDP) %>%
+    summarize(count=GDP) %>%
+    arrange(desc(GDP))
+
+# Top 10 Countries according to GDP
+top10gdp <-gdp %>% 
+ungroup() %>%
+slice(1:10)
+
+top10gdp$finalcount <- top10gdp$count / 1000000000
+
+plot <- ggplot(top10gdp, aes(y=finalcount, x=reorder(Country, desc(finalcount), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() +
+  coord_flip() + 
+    labs(x = "Countries", y = "GDP in billions dollars", 
+       title = "Top 10 Countries according to GDP: 2015")
+ggplotly(plot)
+```
+
+```{r}
+## Total deaths for the year 2020 
+death <- df %>%
+  filter(Year == "2015") %>%
+    group_by(Country, `Total Deaths`) %>%
+    summarize(count =`Total Deaths`) %>%
+    arrange(desc(`Total Deaths`))
+
+# Top 10 Countries according to death 
+topdeath <-death %>% 
+ungroup() %>%
+slice(1:10)
+
+plot <- ggplot(topdeath, aes(y=count, x=reorder(Country, desc(count), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() +
+  coord_flip() + 
+    labs(x = "Countries", y = "Total Deaths", 
+       title = "Top 10 Countries according to Total Deaths: 2015")
+ggplotly(plot)
+```
+
+```{r}
+## Mean temperature correlation with CO2 emissions for the year 2015 
+df1 <- df %>%
+    filter(Year == "2015") %>%
+    group_by(Country, tmean, co2_emission) %>% 
+    summarize(co2_emission) %>%
+    arrange(desc(co2_emission)) %>%
+    ungroup() %>%
+    slice(1:15)
+
+
+## Max temperature correlation with CO2 emissions for the year 2015 
+df1max <- df %>%
+    filter(Year == "2015") %>%
+    group_by(Country, tmax, co2_emission) %>% 
+    summarize(co2_emission) %>%
+    arrange(desc(co2_emission)) %>%
+    ungroup() %>%
+    slice(1:15)
+  
+  
+## Mean temperature correlation with N.o emissions for the year 2015 
+df2 <- df %>%
+    filter(Year == "2015") %>%
+    group_by(Country, tmean, nitrousoxide_emissions) %>% 
+    summarize(nitrousoxide_emissions) %>%
+    arrange(desc(nitrousoxide_emissions)) %>%
+    ungroup() %>%
+    slice(1:15)
+
+## Max temperature correlation with N.o emissions for the year 2015 
+df2max <- df %>%
+    filter(Year == "2015") %>%
+    group_by(Country, tmax, nitrousoxide_emissions) %>% 
+    summarize(nitrousoxide_emissions) %>%
+    arrange(desc(nitrousoxide_emissions)) %>%
+    ungroup() %>%
+    slice(1:15)
+
+```
+
+```{r}
+tempc02 <- 
+  ggplot(df1 , aes(fill = Country, x = tmean, y = co2_emission, 
+)) + geom_point(alpha=0.5, size=2)+
+labs(x ="Mean Temperatue", y ="Co2 Emissions", 
+                        title = "15 Countries with the highest Co2 Emissions with Mean Temperature")
+ggplotly(tempc02)
+
+tempmaxc02 <- 
+  ggplot(df1max , aes(fill = Country, x = tmax, y =co2_emission, 
+)) + geom_point(alpha=0.5, size=4)+
+labs(x ="Max Temperatue", y ="Co2 Emissions", 
+                        title = "15 Countries with the highest Co2 Emissions with Max Temperature") 
+ggplotly(tempmaxc02)
+
+##plot <- ggplot(df1, aes(x= Country , y = tmean, color = co2_mean))  +
+##geom_bar(stat="identity") + theme(plot.title=element_text(hjust = 2))
+##ggplotly(plot)
+```
+
+```{r}
+tempNo2 <- 
+  ggplot(df2 , aes(fill = Country, x = tmean, y = nitrousoxide_emissions, 
+)) + geom_point(alpha=0.5, size=4)+
+labs(x ="Mean Temperatue", y ="Nitrous Oxide Emissions", 
+                        title = "15 Countries with the highest Nitrous Oxide Emissions with Temperature") 
+ggplotly(tempNo2)
+
+tempmaxNo2 <- 
+  ggplot(df2max , aes(fill = Country, x = tmax, y = nitrousoxide_emissions, 
+)) + geom_point(alpha=0.5, size=4)+
+labs(x ="Max Temperatue", y ="Nitrous Oxide Emissions", 
+                        title = "15 Countries with the highest Nitrous Oxide Emissions with Temperature") 
+ggplotly(tempmaxNo2)
+```
+
+```{r}
+# Countries with the total highest Co2 Emissions from 2010 to 2015 
+co2 <- df %>%
+    filter(Year>="2010" , Year <="2015") %>%
+    group_by(Year, Country, co2_emission)
+
+totalco2 <- co2 %>% 
+    group_by(Year,Country, co2_emission) %>%
+    group_by(Country) %>%
+    summarize(Count = sum(co2_emission)) %>% 
+    arrange(desc(Count)) %>%
+    ungroup() %>%
+    slice(1:10)
+
+plotco2 <- ggplot(totalco2 , aes(y=Count, x=reorder(Country, desc(Count)))) +  geom_bar(stat="identity") +
+    labs(x = "Countries", y = "Carbon dioxide levels", 
+       title = "Countries Carbon dioxide Emissions from 2010 till 2015")
+ggplotly(plotco2)
+
+p <- ggplot(totalco2 , aes(x=Count, y=reorder(Country,Count), fill = Country)) + geom_point(alpha=0.5,size=3) +  labs(x = "Countries", y = "Carbon dioxide levels", 
+       title = "Countries Carbon dioxide Emissions from 2010 till 2015") +  theme(legend.position="none")
+ggplotly(p)
+```
+
+
+```{r}
+# Countries with the total highest nitrousoxide Emissions from 2010 to 2015 
+no2 <- df %>%
+    filter(Year>="2010" , Year <="2015") %>%
+    group_by(Year, Country, nitrousoxide_emissions) 
+
+totalno2  <- no2 %>% 
+    group_by(Year, Country, nitrousoxide_emissions) %>%
+    group_by(Country) %>%
+    summarize(Count = sum(nitrousoxide_emissions)) %>% 
+    arrange(desc(Count)) %>%
+    ungroup() %>%
+    slice(1:10)
+
+plotco2 <- ggplot(totalno2, aes(y=Count, x=reorder(Country, desc(Count)))) +  geom_bar(stat="identity") + scale_fill_manual(values=c("Red",'forestgreen','forestgreen','Black','Black','Red','forestgreen','Black','Black','Red'))  +
+    labs(x = "Countries", y = "Nitrous Oxide levels", 
+       title = "Countries Nitrous Oxide Emissions from 2010 till 2015")
+ggplotly(plotco2)
+
+l <- ggplot(totalno2 , aes(x=Count, y=reorder(Country,Count), fill = Country)) + geom_point(alpha=0.5,size=3) + labs(x = "Countries", y = "Nitrous Oxide levels", 
+       title = "Countries Nitrous Oxide Emissions from 2010 till 2015")+ theme(legend.position="none")
+ggplotly(l)
+```
+
+
+
+```{r}
+## LONGITUDE AND LATITUDE TRY 
+## add all long and lat to each country 
+x <- totalco2 %>% 
+    ungroup() %>%
+    slice(1:3)
+
+x$longitude <- c(104.1954, - 95.7129,78.9629)
+x$latitude <- c(35.8617, 37.0902, 20.5937)
+x
+
+#China 104.1954,  35.8617
+#US - 95.7129, 37.0902
+#India 78.9629, 20.5937
+```
+
+totalco2$longitude <- c(3, 3, 6, 7, 8, 12)
+total
+
+
+
+```{r}
+# Long     Lat 
+#China 104.1954,  35.8617
+#US - 95.7129, 37.0902
+#India 78.9629, 20.5937
+#Japan		
+#Germany			
+#Canada			
+#Saudi Arabia			
+#Mexico				
+#Indonesia			
+#Brazil
+#Australia				
+#Cameroon				
+#Pakistan				
+#Ethiopia				
+#Argentina				
+totalno2
+```
+
+Register API key
+```{r}
+register_google(key = "AIzaSyAmH0Verpp1cGO2lGl-2D1XJHX0feGKjSM", write = TRUE)
+```
+
+```{r}
+library(tmap)
+tm_shape(World) + tm_fill("grey70") + tm_borders() + tm_fill("totalco2") +tm_polygons(
+
+
+
+#tmap_mode("view")+
+```
+
+```{r}
+library("ggmap")
+library(maptools)
+library(maps)
+
+mapWorld <- borders("world", colour="gray50", fill="white")
+mapWorld
+mp <- ggplot() + mapWorld 
+mp +  
+  annotate("text",x=69.3, y=30.4, label="Hells Kitchen",
+             color="Dark Blue",fontface=2, size=2) +
+  annotate("text",x=-73.9271, y=40.6958, label="Bushwick", 
+             color="Dark Blue",fontface=2, size=2) +  
+  annotate("text",x=-73.9815, y=40.7265, label="East Village",
+             color="Dark Blue",fontface=2, size=2) + 
+  annotate("text",x=-73.9550, y = 40.7155, label="Williamsburg", 
+             color="Dark Blue",fontface=2, size=2)
+```
+
+
+```{r}
+library("leaflet")
+leaflet(x) %>%
+addProviderTiles(providers$Stamen.TonerLite) %>%
+addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") %>%
+addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+addCircleMarkers(data = x, lng = ~longitude, lat = ~latitude, group = "Country", fillColor="green", stroke = TRUE, fillOpacity = 1)
+
+
+```
+
+
+
+```{r}
+# Read the file with rgdal
+library(rgdal)
+world_spdf = readOGR(dsn= "world_map/", 
+                     layer="TM_WORLD_BORDERS_SIMPL-0.3")
+```
+```{r}
+library("leaflet")
+wm <- leaflet(world_spdf, 
+ leafletOptions(attributionControl = FALSE, minzoom=1.5)) %>% 
+ setView(lat=10, lng=0 , zoom=2) %>%
+ # Add country borders 
+ addPolygons(stroke = TRUE, smoothFactor = 0.5,
+  weight=1, color='#333333', opacity=1)
+```
+
+```{r}
+#NYC map 
+w <- get_map("World",source="google", color="bw", zoom = 12) 
+#nycmap <- ggmap(NY) + geom_point(data=airbnb1, aes(x=longitude,y=latitude),size=0.02, 
+                       #alpha=0.1,color = "green") + 
+  #ggtitle("New York City Airbnb Listings") + theme_map()
+#nycmap
+```
+```
