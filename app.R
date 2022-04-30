@@ -16,8 +16,10 @@ col_choice_list = c('GDP','tmean','Population','Frequency')
 library(shiny)
 
 ui <- fluidPage(
+  titlePanel("Group J - Climate Change and Economics"),
   selectInput("Ind","Independent Variable",choices = col_choice_list),
   plotOutput('Hist'),
+  
   )
 server <- function(input, output, session) {
   
