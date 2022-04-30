@@ -49,20 +49,21 @@ groups <- c('Average Temperature'= "average_temp",
 ui <- fluidPage(
   
   
-  #sidebarLayout(
-    selectInput("Ind","Independent Variable",choices = groups),
-   # sidebarPanel(
-    #  radioButtons(
-    #    inputId = "group",
-    #    label = "Select a group to map",
-    #    choices = groups
-    #  )
-    #),
-   # mainPanel(
-      leafletOutput("map", height = "600")
-    #)
+  sidebarLayout(
+    #selectInput("Ind","Independent Variable",choices = groups),
+    sidebarPanel(
+      radioButtons(
+        inputId = "Ind",
+        label = "Select a variable to map",
+        choices = groups
+      )
+    ),
+    mainPanel(
+      leafletOutput("map", height = "600"),
+      plotOutput('Hist'),
+    )
   )
-#)
+)
 
 
 
@@ -90,6 +91,14 @@ server = function(input, output) {
                   label=labels)
     
   })
+  
+  
+  output$Hist <- renderPlot({
+    req(group_to_map())
+    hist(world_map[[group_to_map()]], col = "purple", border = "white",
+         xlab = " ",
+         main = "Histogram ")
+  }) 
   
   observeEvent(input$Ind, {
     

@@ -27,15 +27,6 @@ year <- df %>%
             sum_freq = sum(Frequency,na.rm=TRUE),
             avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE)
             ) 
-
-ggplot(year, aes(x = Year, y = sum_death)) +
-  geom_line() #+ geom_line(aes(x=Year, y=sum_affected))
-ggplot(year, aes(x = Year, y = average_temp)) +
-  geom_line() #+ geom_line(aes(x=Year, y=sum_affected))
-ggplot(year, aes(x = Year, y = sum_freq)) +
-  geom_line() #+ geom_line(aes(x=Year, y=sum_affected))
-ggplot(year, aes(x = Year, y = avg_gdp_cap_growth)) +
-  geom_line() #+ geom_line(aes(x=Year, y=sum_affected))
 ```
 
 ```{r}
@@ -52,11 +43,11 @@ countries <- df %>%
 top10gdp <- countries %>%
   arrange(desc(avg_gdp)) %>%
   mutate(rank=row_number()) %>%
-  filter(rank<=50)
+  filter(rank<=10)
 bottom10gdp <- countries %>%
   arrange(avg_gdp) %>%
   mutate(rank=row_number()) %>%
-  filter(rank<=50)
+  filter(rank<=10)
 top10gdp$type <- 'Top'
 bottom10gdp$type <- 'Bottom'
 
@@ -129,14 +120,17 @@ head(yeargdp2)
 
 ```
 ```{r}
+colors <- c('avg_perc_energy_ren' = 'green','avg_elect_days','orange')
 ggplot(yeargdp2, aes(x = Year)) + 
   geom_line(aes(y = avg_perc_energy_ren),color='green') +
   geom_line(aes( y = avg_elect_days),color='orange') +
+  scale_color_manual(values = colors) +
+  theme(legend.direction="horizontal",legend.position="top", legend.box = "vertical") +
   facet_wrap(~ type) +
-  scale_colour_manual(name = 'Variables', 
-         values =c('green'='green','orange'='orange'), 
-         labels = c('Percent Energy<br>from Renewables','Average Days for<br>Electricity')) +
-  ylab('Values')
+  labs(x = "Year",
+         y = "Values",
+         color = "Legend")
+
 ```
 
 
@@ -168,11 +162,6 @@ countryfinal <- df %>%
             )
 ```
 
-```{r}
-ggplot(countryfinal,aes(y=avg_perc_energy_ren,x=avg_elect_days)) + geom_point()
-```
-
-
 
 food production vs percent arable land area and population
 ```{r}
@@ -184,13 +173,6 @@ ggplot(countryfinal,aes(y=avg_perc_forest,x=average_perc_arable)) +
   ylab('Average Forest Land Percent per Country') +
   theme_minimal() +
   labs(size='Average GDP')
-```
-```{r}
-library(rworldmap)
-map<- joinCountryData2Map(countryfinal, joinCode = "NAME", nameJoinColumn = "Country")
-mapDevice()
-
-mapCountryData(map, nameColumnToPlot="avg_temp",oceanCol="white",colourPalette='heat')
 ```
 
 ```{r}
@@ -204,15 +186,6 @@ world <- ne_countries(scale = "medium", returnclass = "sf")
 
 world_map <- merge(world, countryfinal, by.x="name", by.y="Country")
 ```
-```{r}
-write.csv(data.frame(world$name),'country_names.csv')
-```
-```{r}
-write.csv(data.frame(countryfinal$Country),'own_data.csv')
-
-```
-
-
 
 
 ```{r}
@@ -241,6 +214,8 @@ p
 ```
 
 
+```{r}
 
+```
 
 
