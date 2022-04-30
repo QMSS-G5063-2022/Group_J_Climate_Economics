@@ -45,7 +45,11 @@ country_count <- unique(dataco2['Country'])
 #filling in average co2 emissions, arable land
 for (i in 1:nrow(country_count)){
   country <- filter(dataco2, Country == country_count[i, 1])
+<<<<<<< HEAD
   country_co2 <- country['co2_emission']/1000000%>%
+=======
+  country_co2 <- country['co2_emission']%>%
+>>>>>>> 2799e9b2b08fc248caf40898828e612ce6591131
     na.omit()
   length_co2 <- nrow(country_co2)
   country_arableland <- country['Arable.Land']%>%
@@ -67,12 +71,21 @@ plot1 <- ggplot(top10, aes(fill = Country, x= avg_co2, y= arableland,
                               color = Country)) + 
   geom_point(position="dodge", stat="identity", 
              width = 1, alpha = 0.7, size = 4) +
+<<<<<<< HEAD
   xlab('Average CO2 Emissions (Millions of Kilotons)') + ylab('Average Arable Land') + 
   ggtitle("Average Arable Land and CO2 Emissions from 2010-2015")
 plot1
 ```
 ##Plot #2
 Comparison of Highest and Lowest Co2 Emitting Countries +  life expectancy + GDP worldwide (on a map)
+=======
+  xlab('CO2 Emissions') + ylab('Arable Land') + 
+  ggtitle("Average Arable Land and CO2 Emissions from 2010-2020")
+plot1
+```
+##Plot #2
+Co2 emissions +  life expectancy for countries worldwide (on a map)
+>>>>>>> 2799e9b2b08fc248caf40898828e612ce6591131
 ```{r}
 year2015 <- filter(dataco2, Year == 2015)
 ```
@@ -81,7 +94,11 @@ year2015 <- filter(dataco2, Year == 2015)
 #adding life expectancy to the plot data
 for (i in 1:nrow(country_count)){
   country_count[i, 'life_expectancy'] <- year2015[i, 'Life.Expectancy']
+<<<<<<< HEAD
   country_count[i, 'gdp'] <- year2015[i, 'GDP']/10000000
+=======
+  country_count[i, 'gdp'] <- year2015[i, 'GDP']
+>>>>>>> 2799e9b2b08fc248caf40898828e612ce6591131
 }
 
 #excluding NA values
@@ -155,9 +172,15 @@ top10_bottom10['latitude'] <- latitude
 ```{r}
 #adding pop-up contents
 popup_content <- paste("Country:",top10_bottom10$Country,"<br/>",
+<<<<<<< HEAD
                        "CO2 Emissions (Hundred Thou. KT):",(top10_bottom10$avg_co2)*1000,"<br/>",
                        "2015 Life Expetancy (Years):",round(top10_bottom10$life_expectancy, digits = 3),"<br/>",
                        "2015 GDP (in Billions):",top10_bottom10$gdp,"<br/>")
+=======
+                       "CO2 Emissions:",top10_bottom10$avg_co2,"<br/>",
+                       "2015 Life Expetancy:",top10_bottom10$life_expectancy,"<br/>",
+                       "2015 GDP:",top10_bottom10$gdp,"<br/>")
+>>>>>>> 2799e9b2b08fc248caf40898828e612ce6591131
 #assigning colors to countries
 pal = colorFactor("Set2", domain = top10_bottom10$rank)
 color_avail = pal(top10_bottom10$rank)
@@ -167,19 +190,27 @@ leaflet(top10_bottom10) %>%
   addTiles() %>%
   addCircleMarkers(lng = ~longitude, lat = ~latitude, group = "Country",
                    fillColor=color_avail, stroke = TRUE, fillOpacity = 1, popup = popup_content)%>%
+<<<<<<< HEAD
   addLegend(pal = pal, values = ~top10_bottom10$rank, title = "CO2 Emitters")
+=======
+  addLegend(pal = pal, values = ~top10_bottom10$rank, title = "Type")
+>>>>>>> 2799e9b2b08fc248caf40898828e612ce6591131
 ```
 
 ## Plot #3
 Co2 emissions + GDP (how top 10 and bottom 10 GDP countries compare in CO2 emissions from 2010-2015)
+<<<<<<< HEAD
 
 Below is a plot of the top and bottom CO2 Emitters worldwide. 
+=======
+>>>>>>> 2799e9b2b08fc248caf40898828e612ce6591131
 ```{r}
 library(plotly)
 plot3 <- plot_ly(top10_bottom10, x = ~Country, y = ~life_expectancy, 
                  type = 'bar', color = ~rank)
 plot3
 ```
+<<<<<<< HEAD
 ## Plot 4
 Fertilizer consumption + methane emission
 ```{r}
@@ -197,3 +228,6 @@ ggplot(df4, aes(x= Year, y= methane_emissions, color = Country, size = Fertilize
   xlab('Year') + ylab('Methane Emissions (Millions of Kilotons)') + 
   ggtitle("Top Methane Emitters and Fertilizer Consumption over Time (1995-2020)")
 ```
+=======
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+>>>>>>> 2799e9b2b08fc248caf40898828e612ce6591131
