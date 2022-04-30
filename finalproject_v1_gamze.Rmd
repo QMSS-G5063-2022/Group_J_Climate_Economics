@@ -1,0 +1,236 @@
+---
+title: "Data Visualization Final Project"
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+```{r}
+setwd("~/Documents/GitHub/Group_J_Climate_Economics/")
+null = read.csv('analysis/initial_analysis/totalnullvaluescountry.csv')
+df =  read.csv('final_to_use.csv')
+head(df)
+```
+## Disaster Univariate Exploration
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+year <- df %>% 
+  group_by(Year) %>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            average_temp = mean(tmean,na.rm=TRUE),
+            sum_freq = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE)
+            ) 
+
+ggplot(year, aes(x = Year, y = sum_death)) +
+  geom_line() #+ geom_line(aes(x=Year, y=sum_affected))
+ggplot(year, aes(x = Year, y = average_temp)) +
+  geom_line() #+ geom_line(aes(x=Year, y=sum_affected))
+ggplot(year, aes(x = Year, y = sum_freq)) +
+  geom_line() #+ geom_line(aes(x=Year, y=sum_affected))
+ggplot(year, aes(x = Year, y = avg_gdp_cap_growth)) +
+  geom_line() #+ geom_line(aes(x=Year, y=sum_affected))
+```
+
+```{r}
+countries <- df %>% 
+  group_by(Country) %>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            average_temp = mean(tmean,na.rm=TRUE),
+            sum_freq = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE),
+            avg_gdp = mean(GDP,na.rm=TRUE)
+            ) 
+top10gdp <- countries %>%
+  arrange(desc(avg_gdp)) %>%
+  mutate(rank=row_number()) %>%
+  filter(rank<=50)
+bottom10gdp <- countries %>%
+  arrange(avg_gdp) %>%
+  mutate(rank=row_number()) %>%
+  filter(rank<=50)
+top10gdp$type <- 'Top'
+bottom10gdp$type <- 'Bottom'
+
+gdpdf <- rbind(top10gdp,bottom10gdp)
+ggplot(top10gdp, aes(x = Country, y = sum_freq)) + geom_bar(stat="identity") 
+```
+
+```{r}
+topyear <- df %>% 
+  filter(Country %in% top10gdp$Country) %>%
+  group_by(Year,Country) %>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            average_temp = mean(tmean,na.rm=TRUE),
+            sum_freq = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE)
+            ) 
+bottomyear <- df %>% 
+  filter(Country %in% bottom10gdp$Country) %>%
+  group_by(Year,Country) %>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            average_temp = mean(tmean,na.rm=TRUE),
+            sum_freq = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE),
+            
+            ) 
+topyear$type <- 'Top'
+bottomyear$type <- 'Bottom'
+
+```
+
+```{r}
+topyear2 <- df %>% 
+  filter(Country %in% topyear$Country)
+bottomyear2 <- df %>% 
+  filter(Country %in% bottomyear$Country)
+topyear2$type = 'top'
+bottomyear2$type = 'bottom'
+yeargdp<-rbind(topyear2,bottomyear2)
+```
+
+```{r}
+yeargdp2 <- yeargdp %>% 
+   filter(Year>=2010&Year<=2015)  %>%
+  group_by(Year,type)%>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            average_temp = mean(tmean,na.rm=TRUE),
+            sum_freq = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE),
+            average_perc_urban = mean(X..Urban.Population,na.rm=TRUE),
+            avg_gdp = mean(GDP),
+            avg_gdp_cap = mean(gdp_per_cap,na.rm=TRUE),
+            avg_temp = mean(tmean,na.rm=TRUE),
+            average_perc_arable = mean(perc_arable_land_area, na.rm=TRUE),
+            average_food_prod = mean(Food.Production, na.rm=TRUE),
+            average_pop = mean(Population,na.rm=TRUE),
+            avg_life_exp = mean(Life.Expectancy,na.rm=TRUE),
+            avg_perc_forest = mean(perc_forest_land_area,na.rm=TRUE),
+            avg_perc_energy_ren = mean(X..Final.Energy.from.Renewables,na.rm=TRUE),
+            avg_co2 = mean(co2_emission,na.rm=TRUE),
+            avg_remittances = mean(remittances_received,na.rm=TRUE),
+            avg_elect_days = mean(days_for_electricity,na.rm=TRUE)
+            )
+head(yeargdp2)
+
+```
+```{r}
+ggplot(yeargdp2, aes(x = Year)) + 
+  geom_line(aes(y = avg_perc_energy_ren),color='green') +
+  geom_line(aes( y = avg_elect_days),color='orange') +
+  facet_wrap(~ type) +
+  scale_colour_manual(name = 'Variables', 
+         values =c('green'='green','orange'='orange'), 
+         labels = c('Percent Energy<br>from Renewables','Average Days for<br>Electricity')) +
+  ylab('Values')
+```
+
+
+change in temperature vs forestry to gdp per capita
+
+```{r}
+countryfinal <- df %>% 
+  group_by(Country) %>%
+  filter(Year>=2010&Year<=2015)%>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            average_temp = mean(tmean,na.rm=TRUE),
+            sum_freq = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE),
+            average_perc_urban = mean(X..Urban.Population,na.rm=TRUE),
+            avg_gdp = mean(GDP),
+            avg_gdp_cap = mean(gdp_per_cap,na.rm=TRUE),
+            avg_temp = mean(tmean,na.rm=TRUE),
+            average_perc_arable = mean(perc_arable_land_area, na.rm=TRUE),
+            average_food_prod = mean(Food.Production, na.rm=TRUE),
+            average_pop = mean(Population,na.rm=TRUE),
+            avg_life_exp = mean(Life.Expectancy,na.rm=TRUE),
+            avg_perc_forest = mean(perc_forest_land_area,na.rm=TRUE),
+            avg_perc_energy_ren = mean(X..Final.Energy.from.Renewables,na.rm=TRUE),
+            avg_co2 = mean(co2_emission,na.rm=TRUE),
+            avg_remittances = mean(remittances_received,na.rm=TRUE),
+            avg_elect_days = mean(days_for_electricity,na.rm=TRUE)
+            )
+```
+
+```{r}
+ggplot(countryfinal,aes(y=avg_perc_energy_ren,x=avg_elect_days)) + geom_point()
+```
+
+
+
+food production vs percent arable land area and population
+```{r}
+ggplot(countryfinal,aes(y=avg_perc_forest,x=average_perc_arable)) + 
+  geom_smooth(method = lm, se = FALSE) + 
+  geom_point(aes(size=avg_gdp)) + 
+  ggtitle("Average Percent Arable Land to Average Percent Forest Area per Country of Years 2010 to 2015 and GDP") +
+  xlab("Average Arable Land Percent per Country") + 
+  ylab('Average Forest Land Percent per Country') +
+  theme_minimal() +
+  labs(size='Average GDP')
+```
+```{r}
+library(rworldmap)
+map<- joinCountryData2Map(countryfinal, joinCode = "NAME", nameJoinColumn = "Country")
+mapDevice()
+
+mapCountryData(map, nameColumnToPlot="avg_temp",oceanCol="white",colourPalette='heat')
+```
+
+```{r}
+library(ggplot2)
+library(scales)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+world_map <- merge(world, countryfinal, by.x="name_sort", by.y="Country")
+```
+
+```{r}
+library(leaflet)
+library(sf)
+library(leaflet)
+
+labels <- sprintf(
+  "<strong>%s</strong><br/>%g C",
+  world_map$name_long, world_map$avg_temp
+) %>% lapply(htmltools::HTML)
+
+#p <- leaflet() %>% addTiles() %>% 
+  #   addPolylines(data = world_map) 
+p <- leaflet(world_map)%>%
+ addPolygons(stroke = TRUE, smoothFactor = 0.5,
+  weight=1, color='#333333', opacity=1, 
+  fillColor = ~colorQuantile("Greens", avg_temp)(avg_temp), 
+  fillOpacity = 1,
+  highlightOptions = highlightOptions(
+    weight = 3,
+    fillOpacity = 0.7,
+    bringToFront = TRUE),
+  label = labels)
+p
+```
+
+
+
+
+
