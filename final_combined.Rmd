@@ -149,22 +149,6 @@ x <- df1 %>%
 ```
 
 # Climate Disasters
-## Total amount of disasters and total deaths throughout the last 20 years
-
-```{r}
-#I THINK THIS ONE IS REPEATED 2 OR 3 CHUNKS AFTER THIS, MAYBE DELETE? ASK GAMZE FIRST
-
-
-ggplot(year, aes(x=Year)) +
-  geom_line(aes(y=average_temp)) +
-  geom_line(aes(y=sum_co2)) +
-  geom_line(aes(y=average_max_temp),color='red') +
-  geom_line(aes(y=average_min_temp),color='blue') + 
-  xlim(1980,2015) +
-  scale_y_continuous(name = "Temperature",
-    sec.axis = sec_axis( trans=~.*1000000, name="CO2 Emissions"))
-```
-
 
 ## Countries affected most by climate related disasters based on total number of deaths from 2010 to 2015
 ```{r}
@@ -175,7 +159,9 @@ death <- df %>%
     summarize(total_deaths =sum(Total.Deaths,na.rm=TRUE)) %>%
     arrange(desc(total_deaths))
 
+```
 
+#### Need to ask Gamze if there's extra code here
 plot1 <- ggplot(ten, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
   geom_col() + coord_flip() +xlab('Countries') +ylab(' ') +
   theme(axis.title.x = element_text(size = 10),
@@ -200,7 +186,6 @@ plot6 <- ggplot(five, aes(y=total_deaths, x=reorder(Country, desc(total_deaths),
 grid.arrange(plot1, plot2, plot3,plot4,plot5,plot6, ncol=3,nrow=2, 
              top='Top 10 Climate Disasters by Total Number of Deaths per Year') 
 
-```
 
 # Climate  
 
@@ -234,6 +219,11 @@ ggplot(year, aes(x=Year)) +
 
 ## Country Level Information
 ```{r}
+colnames(df)[69] <- 'Urban.Population'
+colnames(df)[74] <- 'Food.Production'
+colnames(df)[82] <- 'Life.Expectancy'
+colnames(df)[68] <- 'perc.Final.Energy.from.Renewables'
+
 countryfinal <- df %>% 
   filter(Year>=2010&Year<=2015)%>%
   group_by(Country) %>%
@@ -243,7 +233,7 @@ countryfinal <- df %>%
             average_temp = mean(tmean,na.rm=TRUE),
             sum_freq = sum(Frequency,na.rm=TRUE),
             avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE),
-            average_perc_urban = mean(X..Urban.Population,na.rm=TRUE),
+            average_perc_urban = mean(Urban.Population, na.rm=TRUE),
             avg_gdp = mean(GDP),
             avg_gdp_cap = mean(gdp_per_cap,na.rm=TRUE),
             avg_temp = mean(tmean,na.rm=TRUE),
@@ -252,7 +242,7 @@ countryfinal <- df %>%
             average_pop = mean(Population,na.rm=TRUE),
             avg_life_exp = mean(Life.Expectancy,na.rm=TRUE),
             avg_perc_forest = mean(perc_forest_land_area,na.rm=TRUE),
-            avg_perc_energy_ren = mean(X..Final.Energy.from.Renewables,na.rm=TRUE),
+            avg_perc_energy_ren = mean(perc.Final.Energy.from.Renewables,na.rm=TRUE),
             avg_co2 = mean(co2_emission,na.rm=TRUE),
             avg_remittances = mean(remittances_received,na.rm=TRUE),
             avg_elect_days = mean(days_for_electricity,na.rm=TRUE),
@@ -287,8 +277,7 @@ leaflet(world_map)%>%
   popup = labels)
 ```
 
-# GHG Emissions
-
+## Total amount of disasters and total deaths throughout the last 20 years
 ```{r}
 death <- df %>%
   filter(Year>=2010&Year<=2015) %>%
@@ -298,6 +287,8 @@ death <- df %>%
 death
 ```
 
+# GHG Emissions
+## Carbon dioxide Emissions from 2010 till 2015
 ```{r}
 # Countries with the total highest Co2 Emissions from 2010 to 2015 
 co2 <- df %>%
@@ -317,19 +308,19 @@ plotco2 <- ggplot(totalco2 , aes(y=Count, x=reorder(Country, desc(Count)))) +  g
        title = "Countries Carbon dioxide Emissions from 2010 till 2015")
 ggplotly(plotco2)
 
-p <- ggplot(totalco2 , aes(x=Count, y=reorder(Country,Count), fill = Country)) + geom_point(alpha=0.5,size=3) +  labs(x = "Countries", y = "Carbon dioxide levels", 
+p <- ggplot(totalco2 , aes(x=Count, y=reorder(Country,Count), fill = Country)) + geom_point(alpha=0.5,size=3) +  labs(x = "Carbon dioxide levels", y = "Countries", 
        title = "Countries Carbon dioxide Emissions from 2010 till 2015") +  theme(legend.position="none")
 ggplotly(p)
 ```
 
+## Top 10 CO2 Emitters and Their Arable Land
 ```{r}
+colnames(finaldata)[42] <- 'Arable.Land'
+
 dataco2 <- filter(finaldata, is.na('co2_emission') == FALSE)%>%
   filter(Year > 2009, Year < 2016)%>%
   group_by(Year, Country, co2_emission)
-```
 
-## Top 10 CO2 Emitters and Their Arable Land
-```{r}
 dataco2 <- filter(finaldata, Year == 2015)%>%
   group_by(Country, co2_emission, Arable.Land) %>%
   summarize(count_co2=co2_emission, count_ar=Arable.Land) %>%
@@ -338,13 +329,13 @@ dataco2 <- filter(finaldata, Year == 2015)%>%
   slice(1:10)
 
 #plotting co2 and arable land
-plot1 <- ggplot(dataco2, aes(fill = Country, x= count_co2, y= count_ar, 
+plot1 <- ggplot(dataco2, aes(x= count_co2, y= count_ar, 
                               color = Country)) + 
   geom_point(position="dodge", stat="identity", 
              width = 1, alpha = 0.7, size = 4) +
   xlab('Average CO2 Emissions (Millions of Kilotons)') + ylab('Average Arable Land') + 
   ggtitle("Average Arable Land and CO2 Emissions from 2010-2015")
-plot1
+ggplotly(plot1)
 ```
 
 # Wellbeing
@@ -377,9 +368,9 @@ ggplotly(plot)
 ## Total deaths for the year 2020 
 death <- df %>%
   filter(Year == "2015") %>%
-    group_by(Country, `Total Deaths`) %>%
-    summarize(count =`Total Deaths`) %>%
-    arrange(desc(`Total Deaths`))
+    group_by(Country, Total.Deaths) %>%
+    summarize(count = Total.Deaths) %>%
+    arrange(desc(Total.Deaths))
 
 # Top 10 Countries according to death 
 topdeath <-death %>% 
@@ -395,19 +386,20 @@ ggplotly(plot)
 ```
 ## GDP/capita & Total Death Frequency
 ```{r}
-# GDP per capita with total deaths Frequency 
+# GDP percapita with total deaths Frequency 
 
-df1 <- df[, c('Country', 'Year', 'gdp_per_cap', 'Total Deaths','Frequency','tmean')]
+df1 <- df[, c('Country', 'Year', 'gdp_per_cap', 'Total.Deaths','Frequency','tmean')]
 
 x <- df1 %>%
-  filter(Year>="2010" , Year <="2015") %>%
+  filter(Year>=2010 , Year <=2015) %>%
   #group_by(gdp_per_cap, Total Deaths,Frequency) %>% 
   group_by(Country) %>%
-  summarize(`Total Death Count` = sum(`Total Deaths`, na.rm=TRUE),
-            `Total Frequency` = sum(Frequency, na.rm=TRUE),
-            `Average GDP` = mean(gdp_per_cap, na.rm=TRUE),
-            `Average Temperature` = mean(tmean,na.rm=TRUE)
+  summarize('Total.Death.Count' = sum(`Total.Deaths`, na.rm=TRUE),
+            'Total Frequency' = sum(Frequency, na.rm=TRUE),
+            'Average GDP' = mean(gdp_per_cap, na.rm=TRUE),
+            'Average Temperature' = mean(tmean,na.rm=TRUE)
             )
+x
 ```
 # Climate Disasters and Wellbeing
 
