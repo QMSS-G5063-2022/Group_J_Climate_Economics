@@ -1,0 +1,423 @@
+---
+title: "Final Project"
+author: "Gamze Bilsen, Sierra Cheung, Sehrish Mastoor"
+date: "4/30/2022"
+output:
+  html_document:
+    toc: true
+    toc_depth: 6
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(devtools)
+library(dbplyr)
+library(dplyr)
+library(DT)
+library(forcats)
+library(geojsonsf)
+library(geometries)
+library(geospatial)
+library(ggalt)   
+library(ggmap)
+library(ggplot2)
+library(ggpubr)
+library(ggrepel)
+library(ggthemes)
+library(htmlwidgets)
+library(leaflet)
+library(maps)
+library(magrittr)
+library(paletteer)
+library(plotly)
+library(raster)
+library(RColorBrewer)
+library(readr)
+library(rgdal)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rvest)
+library(scales)
+library(sf)
+library(sp)
+library(stringr)
+library(tidyr)
+library(tidytext)
+library(tmap)
+
+vignette(package = "tmap") # available vignettes in tmap
+vignette("tmap-nutshell")
+
+devtools::install_github("rstudio/leaflet")
+```
+```{r}
+finaldata <- read.csv('final_to_use.csv')
+df<- read_csv("final_to_use.csv")
+```
+
+# Climate Indicators
+
+## Temperature over Time
+
+## Temperatures and CO2 emissions in 2015 
+```{r}
+## Mean temperature correlation with CO2 emissions for the year 2015 
+df1 <- df %>%
+    filter(Year == "2015") %>%
+    group_by(Country, tmean, co2_emission) %>% 
+    summarize(co2_emission) %>%
+    arrange(desc(co2_emission)) %>%
+    ungroup() %>%
+    slice(1:15)
+
+## Max temperature correlation with CO2 emissions for the year 2015 
+df1max <- df %>%
+    filter(Year == "2015") %>%
+    group_by(Country, tmax, co2_emission) %>% 
+    summarize(co2_emission) %>%
+    arrange(desc(co2_emission)) %>%
+    ungroup() %>%
+    slice(1:15)
+  
+  
+## Mean temperature correlation with N.o emissions for the year 2015 
+df2 <- df %>%
+    filter(Year == "2015") %>%
+    group_by(Country, tmean, nitrousoxide_emissions) %>% 
+    summarize(nitrousoxide_emissions) %>%
+    arrange(desc(nitrousoxide_emissions)) %>%
+    ungroup() %>%
+    slice(1:15)
+
+## Max temperature correlation with N.o emissions for the year 2015 
+df2max <- df %>%
+    filter(Year == "2015") %>%
+    group_by(Country, tmax, nitrousoxide_emissions) %>% 
+    summarize(nitrousoxide_emissions) %>%
+    arrange(desc(nitrousoxide_emissions)) %>%
+    ungroup() %>%
+    slice(1:15)
+
+#Countries with the highest temperature
+tempc02 <- 
+  ggplot(df1 , aes(fill = Country, x = tmean, y = co2_emission, 
+)) + geom_point(alpha=0.5, size=2)+
+labs(x ="Mean Temperatue", y ="Co2 Emissions", 
+                        title = "15 Countries with the highest Co2 Emissions with Mean Temperature")
+ggplotly(tempc02)
+
+tempmaxc02 <- 
+  ggplot(df1max , aes(fill = Country, x = tmax, y =co2_emission, 
+)) + geom_point(alpha=0.5, size=4)+
+labs(x ="Max Temperatue", y ="Co2 Emissions", 
+                        title = "15 Countries with the highest Co2 Emissions with Max Temperature") 
+ggplotly(tempmaxc02)
+
+```
+
+## Mean and Max Temperatures and Nitrous Oxide
+```{r}
+tempNo2 <- 
+  ggplot(df2 , aes(fill = Country, x = tmean, y = nitrousoxide_emissions, 
+)) + geom_point(alpha=0.5, size=4)+
+labs(x ="Mean Temperatue", y ="Nitrous Oxide Emissions", 
+                        title = "Highest Nitrous Oxide Emissions with Mean Temperature") 
+ggplotly(tempNo2)
+
+tempmaxNo2 <- 
+  ggplot(df2max , aes(fill = Country, x = tmax, y = nitrousoxide_emissions, 
+)) + geom_point(alpha=0.5, size=4)+
+labs(x ="Max Temperatue", y ="Nitrous Oxide Emissions", 
+                      title = "Highest Nitrous Oxide Emissions with Max Temperature") 
+ggplotly(tempmaxNo2)
+```
+# Climate Disasters
+
+```{r}
+df1 <- df[, c('Country', 'Year', 'gdp_per_cap', 'Total.Deaths','Frequency')]
+
+x <- df1 %>%
+  filter(Year>='2010' , Year <='2015') %>%
+  group_by(Year) %>%
+  summarize(totaldeathcount = sum(Total.Deaths, na.rm=TRUE),
+            totalfrequency = sum(Frequency, na.rm=TRUE),
+            avggdp = mean(gdp_per_cap, na.rm=TRUE)
+            )
+
+```
+
+# Climate Disasters
+## Total amount of disasters and total deaths throughout the last 20 years
+
+```{r}
+ggplot(year, aes(x=Year)) +
+  geom_line(aes(y=average_temp)) +
+  geom_line(aes(y=sum_co2)) +
+  geom_line(aes(y=average_max_temp),color='red') +
+  geom_line(aes(y=average_min_temp),color='blue') + 
+  xlim(1980,2015) +
+  scale_y_continuous(name = "Temperature",
+    sec.axis = sec_axis( trans=~.*1000000, name="CO2 Emissions"))
+```
+
+
+## Countries affected most by climate related disasters based on total number of deaths from 2010 to 2015
+```{r}
+require(gridExtra)
+death <- df %>%
+  filter(Year>=2010&Year<=2015) %>%
+    group_by(Country,Year) %>%
+    summarize(total_deaths =sum(Total.Deaths,na.rm=TRUE)) %>%
+    arrange(desc(total_deaths))
+
+
+plot1 <- ggplot(ten, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab('Countries') +ylab(' ') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+plot2 <- ggplot(eleven, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
+plot3 <- ggplot(twelve, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
+plot4 <- ggplot(thirt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab('Countries') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+plot5 <- ggplot(fourt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+plot6 <- ggplot(five, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+
+grid.arrange(plot1, plot2, plot3,plot4,plot5,plot6, ncol=3,nrow=2, 
+             top='Top 10 Climate Disasters by Total Number of Deaths per Year') 
+
+```
+
+# Climate  
+
+Decrease in weather related disasters: https://www.nationalgeographic.com/environment/article/weather-disaster-related-deaths-are-downwarming-could-undo-that-trend
+
+## Change throughout time
+```{r}
+year <- df %>% 
+  group_by(Year) %>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            average_temp = mean(tmean,na.rm=TRUE),
+            average_max_temp = mean(tmax,na.rm=TRUE),
+            average_min_temp = mean(tmin,na.rm=TRUE),
+            sum_freq = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE),
+            sum_no2 = sum(nitrousoxide_emissions,na.rm=TRUE)/1000000,
+            sum_co2 = sum(co2_emission,na.rm=TRUE)/1000000)
+ggplot(year, aes(x=Year)) +
+  geom_line(aes(y=average_temp)) +
+  geom_line(aes(y=sum_co2)) +
+  geom_line(aes(y=average_max_temp),color='red') +
+  geom_line(aes(y=average_min_temp),color='blue') + 
+  xlim(1980,2015) +
+  scale_y_continuous(name = "Temperature",
+    sec.axis = sec_axis( trans=~.*1000000, name="CO2 Emissions"))
+  
+```
+
+## Country Level Information
+```{r}
+countryfinal <- df %>% 
+  filter(Year>=2010&Year<=2015)%>%
+  group_by(Country) %>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            average_temp = mean(tmean,na.rm=TRUE),
+            sum_freq = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE),
+            average_perc_urban = mean(X..Urban.Population,na.rm=TRUE),
+            avg_gdp = mean(GDP),
+            avg_gdp_cap = mean(gdp_per_cap,na.rm=TRUE),
+            avg_temp = mean(tmean,na.rm=TRUE),
+            average_perc_arable = mean(perc_arable_land_area, na.rm=TRUE),
+            average_food_prod = mean(Food.Production, na.rm=TRUE),
+            average_pop = mean(Population,na.rm=TRUE),
+            avg_life_exp = mean(Life.Expectancy,na.rm=TRUE),
+            avg_perc_forest = mean(perc_forest_land_area,na.rm=TRUE),
+            avg_perc_energy_ren = mean(X..Final.Energy.from.Renewables,na.rm=TRUE),
+            avg_co2 = mean(co2_emission,na.rm=TRUE),
+            avg_remittances = mean(remittances_received,na.rm=TRUE),
+            avg_elect_days = mean(days_for_electricity,na.rm=TRUE),
+            average_max_temp = mean(tmax,na.rm=TRUE),
+            average_min_temp = mean(tmin,na.rm=TRUE))
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+world_map <- merge(world, countryfinal, by.x="name", by.y="Country")
+
+population_data<-na.omit(df[,c('Country','Year','Population')])%>% 
+  group_by(Country) %>%
+  slice(which.max(Year))
+
+world_map <- merge(world_map,population_data,by.x='name',by.y='Country')
+
+labels <- paste(
+  "<strong>",world_map$name,"</strong><br/>Average Temperature",round(world_map$avg_temp,2),"C",
+  "<br/>Maximum Temperature",round(world_map$average_max_temp,2), "C",
+  "<br/>Minimum Temperature",round(world_map$average_min_temp,2), "C",
+  "<br/>Total Deaths from Disasters",round(world_map$sum_freq,2)
+) %>% lapply(htmltools::HTML)
+
+leaflet(world_map)%>%
+ addPolygons(stroke = TRUE, smoothFactor = 0.5,
+  weight=1, color='#333333', opacity=1, 
+  fillColor = ~colorQuantile("Greens", avg_temp)(avg_temp), 
+  fillOpacity = 1,
+  highlightOptions = highlightOptions(
+    weight = 3,
+    fillOpacity = 0.7,
+    bringToFront = TRUE),
+  popup = labels)
+```
+
+# GHG Emissions
+
+```{r}
+death <- df %>%
+  filter(Year>=2010&Year<=2015) %>%
+    group_by(Country,Year) %>%
+    summarize(total_deaths =sum(Total.Deaths,na.rm=TRUE)) %>%
+    arrange(desc(total_deaths))
+death
+```
+
+```{r}
+# Countries with the total highest Co2 Emissions from 2010 to 2015 
+co2 <- df %>%
+    filter(Year>="2010" , Year <="2015") %>%
+    group_by(Year, Country, co2_emission)
+
+totalco2 <- co2 %>% 
+    group_by(Year,Country, co2_emission) %>%
+    group_by(Country) %>%
+    summarize(Count = sum(co2_emission)) %>% 
+    arrange(desc(Count)) %>%
+    ungroup() %>%
+    slice(1:10)
+
+plotco2 <- ggplot(totalco2 , aes(y=Count, x=reorder(Country, desc(Count)))) +  geom_bar(stat="identity") +
+    labs(x = "Countries", y = "Carbon dioxide levels", 
+       title = "Countries Carbon dioxide Emissions from 2010 till 2015")
+ggplotly(plotco2)
+
+p <- ggplot(totalco2 , aes(x=Count, y=reorder(Country,Count), fill = Country)) + geom_point(alpha=0.5,size=3) +  labs(x = "Countries", y = "Carbon dioxide levels", 
+       title = "Countries Carbon dioxide Emissions from 2010 till 2015") +  theme(legend.position="none")
+ggplotly(p)
+```
+
+```{r}
+dataco2 <- filter(finaldata, is.na('co2_emission') == FALSE)%>%
+  filter(Year > 2009, Year < 2016)%>%
+  group_by(Year, Country, co2_emission)
+```
+
+## Top 10 CO2 Emitters and Their Arable Land
+```{r}
+dataco2 <- filter(finaldata, Year == 2015)%>%
+  group_by(Country, co2_emission, Arable.Land) %>%
+  summarize(count_co2=co2_emission, count_ar=Arable.Land) %>%
+  arrange(desc(co2_emission))%>%
+  ungroup()%>%
+  slice(1:10)
+
+#plotting co2 and arable land
+plot1 <- ggplot(dataco2, aes(fill = Country, x= count_co2, y= count_ar, 
+                              color = Country)) + 
+  geom_point(position="dodge", stat="identity", 
+             width = 1, alpha = 0.7, size = 4) +
+  xlab('Average CO2 Emissions (Millions of Kilotons)') + ylab('Average Arable Land') + 
+  ggtitle("Average Arable Land and CO2 Emissions from 2010-2015")
+plot1
+```
+
+# Wellbeing
+## GDP of countries Worldwide in 2020
+```{r}
+## GDP for the year 2020 
+gdp <- df %>%
+  filter(Year == "2015") %>%
+    group_by(Country, GDP) %>%
+    summarize(count=GDP) %>%
+    arrange(desc(GDP))
+
+# Top 10 Countries according to GDP
+top10gdp <-gdp %>% 
+ungroup() %>%
+slice(1:10)
+
+top10gdp$finalcount <- top10gdp$count / 1000000000
+
+plot <- ggplot(top10gdp, aes(y=finalcount, x=reorder(Country, desc(finalcount), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() +
+  coord_flip() + 
+    labs(x = "Countries", y = "GDP in billions dollars", 
+       title = "Top 10 Countries according to GDP: 2015")
+ggplotly(plot)
+```
+
+## Deaths in Countries Worldwide in 2020
+```{r}
+## Total deaths for the year 2020 
+death <- df %>%
+  filter(Year == "2015") %>%
+    group_by(Country, `Total Deaths`) %>%
+    summarize(count =`Total Deaths`) %>%
+    arrange(desc(`Total Deaths`))
+
+# Top 10 Countries according to death 
+topdeath <-death %>% 
+ungroup() %>%
+slice(1:10)
+
+plot <- ggplot(topdeath, aes(y=count, x=reorder(Country, desc(count)))) + 
+  geom_col() +
+  coord_flip() + 
+    labs(x = "Countries", y = "Total Deaths", 
+       title = "Top 10 Countries according to Total Deaths: 2015") +  scale_colour_brewer(palette = "Set1")
+ggplotly(plot)
+```
+## GDP/capita & Total Death Frequency
+```{r}
+# GDP per capita with total deaths Frequency 
+
+df1 <- df[, c('Country', 'Year', 'gdp_per_cap', 'Total Deaths','Frequency','tmean')]
+
+x <- df1 %>%
+  filter(Year>="2010" , Year <="2015") %>%
+  #group_by(gdp_per_cap, Total Deaths,Frequency) %>% 
+  group_by(Country) %>%
+  summarize(`Total Death Count` = sum(`Total Deaths`, na.rm=TRUE),
+            `Total Frequency` = sum(Frequency, na.rm=TRUE),
+            `Average GDP` = mean(gdp_per_cap, na.rm=TRUE),
+            `Average Temperature` = mean(tmean,na.rm=TRUE)
+            )
+```
+# Climate Disasters and Wellbeing
+
+# Climate Indicators and Wellbeing
+- sierra's co2 indicators and sehrish's indicator plots
+
+# Climate Indicators and Disasters
+- 
+
+- one tap be GDP and one be urban population (x variables stay the same but y variables change)
+
+
+
+
+
+
+
+
+
+
