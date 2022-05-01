@@ -54,11 +54,20 @@ devtools::install_github("rstudio/leaflet")
 ```{r}
 finaldata <- read_csv('final_to_use.csv')
 df<- read_csv("final_to_use.csv")
+
+#Changing column names ahead of time to match everyone's code
+colnames(df)[5] <- 'Total.Deaths'
+colnames(df)[6] <- 'Total.Affected'
+colnames(df)[68] <- 'perc.Final.Energy.from.Renewables'
+colnames(df)[69] <- 'Urban.Population'
+colnames(df)[74] <- 'Food.Production'
+colnames(df)[82] <- 'Life.Expectancy'
+
+colnames(finaldata)[42] <- 'Arable.Land'
+colnames(finaldata)[82] <- 'Life.Expectancy'
 ```
 
 # Climate Indicators
-
-## Temperature over Time
 
 ## Temperatures and CO2 emissions in 2015 
 ```{r}
@@ -132,68 +141,11 @@ labs(x ="Max Temperatue", y ="Nitrous Oxide Emissions",
                       title = "Highest Nitrous Oxide Emissions with Max Temperature") 
 ggplotly(tempmaxNo2)
 ```
-# Climate Disasters
-
-```{r}
-colnames(df)[5] <- 'Total.Deaths'
-df1 <- df[, c('Country', 'Year', 'gdp_per_cap', 'Total.Deaths','Frequency')]
-
-x <- df1 %>%
-  filter(Year>=2010 , Year <=2015) %>%
-  group_by(Year) %>%
-  summarize(totaldeathcount = sum(Total.Deaths, na.rm=TRUE),
-            totalfrequency = sum(Frequency, na.rm=TRUE),
-            avggdp = mean(gdp_per_cap, na.rm=TRUE)
-            )
-
-```
-
-# Climate Disasters
-
-## Countries affected most by climate related disasters based on total number of deaths from 2010 to 2015
-```{r}
-require(gridExtra)
-death <- df %>%
-  filter(Year>=2010&Year<=2015) %>%
-    group_by(Country,Year) %>%
-    summarize(total_deaths =sum(Total.Deaths,na.rm=TRUE)) %>%
-    arrange(desc(total_deaths))
-
-```
-
-#### Need to ask Gamze if there's extra code here
-plot1 <- ggplot(ten, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab('Countries') +ylab(' ') +
-  theme(axis.title.x = element_text(size = 10),
-        axis.title.y = element_text(size=10))
-plot2 <- ggplot(eleven, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
-plot3 <- ggplot(twelve, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
-plot4 <- ggplot(thirt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab('Countries') +ylab('Total Deaths') +
-  theme(axis.title.x = element_text(size = 10),
-        axis.title.y = element_text(size=10))
-plot5 <- ggplot(fourt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
-  theme(axis.title.x = element_text(size = 10),
-        axis.title.y = element_text(size=10))
-plot6 <- ggplot(five, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
-  theme(axis.title.x = element_text(size = 10),
-        axis.title.y = element_text(size=10))
-
-grid.arrange(plot1, plot2, plot3,plot4,plot5,plot6, ncol=3,nrow=2, 
-             top='Top 10 Climate Disasters by Total Number of Deaths per Year') 
-
-
-# Climate  
+## Changes throughout time
 
 Decrease in weather related disasters: https://www.nationalgeographic.com/environment/article/weather-disaster-related-deaths-are-downwarming-could-undo-that-trend
 
-## Change throughout time
 ```{r}
-colnames(df)[6] <- 'Total.Affected'
 year <- df %>% 
   group_by(Year) %>%
   summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
@@ -217,13 +169,81 @@ ggplot(year, aes(x=Year)) +
   
 ```
 
-## Country Level Information
-```{r}
-colnames(df)[69] <- 'Urban.Population'
-colnames(df)[74] <- 'Food.Production'
-colnames(df)[82] <- 'Life.Expectancy'
-colnames(df)[68] <- 'perc.Final.Energy.from.Renewables'
+# Climate Disasters
 
+```{r}
+
+df1 <- df[, c('Country', 'Year', 'gdp_per_cap', 'Total.Deaths','Frequency')]
+
+x <- df1 %>%
+  filter(Year>=2010 , Year <=2015) %>%
+  group_by(Year) %>%
+  summarize(totaldeathcount = sum(Total.Deaths, na.rm=TRUE),
+            totalfrequency = sum(Frequency, na.rm=TRUE),
+            avggdp = mean(gdp_per_cap, na.rm=TRUE)
+            )
+
+```
+
+## Countries affected most by climate related disasters based on total number of deaths from 2010 to 2015
+```{r}
+require(gridExtra)
+death <- df %>%
+  filter(Year>=2010&Year<=2015) %>%
+    group_by(Country,Year) %>%
+    summarize(total_deaths =sum(Total.Deaths,na.rm=TRUE)) %>%
+    arrange(desc(total_deaths))
+
+```
+
+## Total amount of disasters and total deaths throughout the last 20 years
+```{r}
+death <- df %>%
+  filter(Year>=2010&Year<=2015) %>%
+    group_by(Country,Year) %>%
+    summarize(total_deaths =sum(Total.Deaths,na.rm=TRUE)) %>%
+    arrange(desc(total_deaths))
+death
+```
+
+#### Need to ask Gamze if there's extra code here
+plot1 <- ggplot(ten, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab('Countries') +ylab(' ') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+        
+        
+plot2 <- ggplot(eleven, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
+  
+  
+plot3 <- ggplot(twelve, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
+  
+  
+plot4 <- ggplot(thirt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab('Countries') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+        
+        
+plot5 <- ggplot(fourt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+        
+        
+plot6 <- ggplot(five, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+
+grid.arrange(plot1, plot2, plot3,plot4,plot5,plot6, ncol=3,nrow=2, 
+             top='Top 10 Climate Disasters by Total Number of Deaths per Year') 
+
+#Mapping
+## Country Specs
+```{r}
 countryfinal <- df %>% 
   filter(Year>=2010&Year<=2015)%>%
   group_by(Country) %>%
@@ -277,14 +297,93 @@ leaflet(world_map)%>%
   popup = labels)
 ```
 
-## Total amount of disasters and total deaths throughout the last 20 years
+
+## CO2 Emitter Rankings Worldwide
+
+Comparison of Highest and Lowest Co2 Emitting Countries +  life expectancy + GDP worldwide (on a map)
 ```{r}
-death <- df %>%
-  filter(Year>=2010&Year<=2015) %>%
-    group_by(Country,Year) %>%
-    summarize(total_deaths =sum(Total.Deaths,na.rm=TRUE)) %>%
-    arrange(desc(total_deaths))
-death
+top10co2 <- filter(finaldata, Year ==2015)%>%
+  group_by(Year, Country, co2_emission, Life.Expectancy, GDP)%>%
+  summarize(count_co2=co2_emission, count_life=Life.Expectancy, count_gdp =GDP) %>%
+  arrange(desc(co2_emission))%>%
+  ungroup()%>%
+  slice(1:10)
+
+bottom10co2 <- filter(finaldata, Year ==2015)%>%
+  group_by(Year, Country, co2_emission, Life.Expectancy, GDP)%>%
+  summarize(count_co2=co2_emission, count_life=Life.Expectancy, count_gdp =GDP) %>%
+  arrange(desc(-co2_emission))%>%
+  ungroup()%>%
+  slice(1:10)
+
+top10co2['rank'] <- 'Top 10 Emitter'
+bottom10co2['rank'] <- 'Bottom 10 Emitter'
+
+
+#binding top and bottom 10 co2 level countries
+top10_bottom10 <- rbind(top10co2, bottom10co2)
+
+#Longitude and latitudes for top and bottom 10 countries
+longitude <- c(116.20, #China
+               -77.02, #US
+               77.13, #India
+               138.25, #Japan
+               13.25, #Germany
+               45.00, #Saudi Arabia
+               -106.42, #Canada
+               113.10, #Indonesia
+               -51.92, #Brazil
+               -102.55, #Mexico
+               177.65, #tuvalu
+               166.3, #Nauru
+               -168.73, #Kiribati
+               -175.20, #Tonga
+               6.61, #Sao Tome and Principe
+               173, #Vanuatu
+               -171.00, #Marshall Islands
+               43.33, #Comoros
+               9.55, #Liechtenstein
+               -61.37) #Dominica
+
+latitude <- c(39.55, #China
+              39.91, #US
+              28.37, #India
+              36.20, #Japan
+              52.30, #Germany
+              23.88, #saudi Arabia
+              56.27, #Canada 
+              -6.09, #Indonesia
+              -14.47, #Brazil
+              23.63, #Mexico
+              -7.10, #tuvalu
+              -0.523, #Nauru
+              -3.37, #Kiribati
+              -21.10, #Tonga
+              0.16, #Sao Tome and Principe
+              -17.45, #Vanuatu
+              7.13, #Marshall Islands
+              -11.64, #Comoros
+              47.08, #Liechtenstein
+              15.41) #Dominica
+
+top10_bottom10['longitude'] <- longitude
+top10_bottom10['latitude'] <- latitude
+
+#adding pop-up contents
+popup_content <- paste("Country:",top10_bottom10$Country,"<br/>",
+                       "CO2 Emissions (Hundred Thou. KT):",(top10_bottom10$co2_emission)*1000,"<br/>",
+                       "2015 Life Expetancy (Years):",round(top10_bottom10$Life.Expectancy, digits = 3),"<br/>",
+                       "2015 GDP (in Billions):",top10_bottom10$GDP,"<br/>")
+#assigning colors to countries
+pal = colorFactor("Set2", domain = top10_bottom10$rank)
+color_avail = pal(top10_bottom10$rank)
+
+#plotting on world map
+leaflet(top10_bottom10) %>%
+  addTiles() %>%
+  addCircleMarkers(lng = ~longitude, lat = ~latitude, group = "Country",
+                   fillColor=color_avail, stroke = TRUE, fillOpacity = 1, popup = popup_content)%>%
+  addLegend(pal = pal, values = ~top10_bottom10$rank, title = "CO2 Emitters")
 ```
 
 # GHG Emissions
@@ -312,11 +411,10 @@ p <- ggplot(totalco2 , aes(x=Count, y=reorder(Country,Count), fill = Country)) +
        title = "Countries Carbon dioxide Emissions from 2010 till 2015") +  theme(legend.position="none")
 ggplotly(p)
 ```
+## Country Wellbeing Plots
 
-## Top 10 CO2 Emitters and Their Arable Land
+### Arable Land for Top and Bottom 10 CO2 Emitters
 ```{r}
-colnames(finaldata)[42] <- 'Arable.Land'
-
 dataco2 <- filter(finaldata, is.na('co2_emission') == FALSE)%>%
   filter(Year > 2009, Year < 2016)%>%
   group_by(Year, Country, co2_emission)
@@ -338,8 +436,18 @@ plot1 <- ggplot(dataco2, aes(x= count_co2, y= count_ar,
 ggplotly(plot1)
 ```
 
-# Wellbeing
-## GDP of countries Worldwide in 2020
+### Economic and Population Wellbeing and CO2 Emissions
+Co2 emissions + GDP (how top 10 and bottom 10 GDP countries compare in CO2 emissions from 2010-2015)
+
+Below is a plot of the top and bottom CO2 Emitters worldwide. 
+```{r}
+library(plotly)
+plot3 <- plot_ly(top10_bottom10, x = ~Country, y = ~Life.Expectancy, 
+                 type = 'bar', color = ~rank)
+plot3
+```
+
+### GDP of countries Worldwide in 2020
 ```{r}
 ## GDP for the year 2020 
 gdp <- df %>%
@@ -363,7 +471,7 @@ plot <- ggplot(top10gdp, aes(y=finalcount, x=reorder(Country, desc(finalcount), 
 ggplotly(plot)
 ```
 
-## Deaths in Countries Worldwide in 2020
+### Deaths in Countries Worldwide in 2020
 ```{r}
 ## Total deaths for the year 2020 
 death <- df %>%
@@ -384,7 +492,8 @@ plot <- ggplot(topdeath, aes(y=count, x=reorder(Country, desc(count)))) +
        title = "Top 10 Countries according to Total Deaths: 2015") +  scale_colour_brewer(palette = "Set1")
 ggplotly(plot)
 ```
-## GDP/capita & Total Death Frequency
+
+### GDP/capita & Total Death Frequency
 ```{r}
 # GDP percapita with total deaths Frequency 
 
@@ -401,15 +510,6 @@ x <- df1 %>%
             )
 x
 ```
-# Climate Disasters and Wellbeing
-
-# Climate Indicators and Wellbeing
-- sierra's co2 indicators and sehrish's indicator plots
-
-# Climate Indicators and Disasters
-- 
-
-- one tap be GDP and one be urban population (x variables stay the same but y variables change)
 
 
 
