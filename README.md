@@ -3,6 +3,8 @@
 <b>Title</b>: 
 Repercussions of Climate Change on Countries Worldwide
 
+Link to Rpubs website: https://rpubs.com/sgc2143/DV2022
+
 <b>Abstract</b>:
 Our group is interested in how climate change has impacted countries around the world economically and in terms of development. Our research questions include:
 How do climate disasters impact gdp/capita, and if/how this relationship changes with the frequency of nature of the observed climate disasters?
@@ -23,7 +25,7 @@ https://data.worldbank.org/topic/19
 EM-DAT: Data of disasters worldwide since 1900. Includes type of disaster, a record of when it happened, when the records were last updated, where the events happened, etc. They also include certain subgroups that may be used to indicate compounded nature. If an earthquake caused ground shaking and a subsequent tsunami, this may be counted as one disaster that resulted in two subtypes of disaster.
 https://public.emdat.be/about
 
-link to rpubs website: https://rpubs.com/sgc2143/DV2022
+Link to website: https://rpubs.com/sgc2143/DV2022
 
 
 <b> Group Member Information </b> <br>
