@@ -1,0 +1,254 @@
+---
+title: "Final Project"
+author: "Gamze Bilsen"
+date: "4/30/2022"
+output: html_document
+---
+
+```{r}
+library(MASS)
+library(tidyr)
+library(reshape)
+library(dplyr)
+library(tidyr)
+library(tidytext)
+library(ggplot2)
+library(DT)
+library(readr)
+library(raster)
+library(htmlwidgets)
+library(rgdal)
+library(sf)
+library(ggmap)
+library(tmap)
+library(maps)
+library(DT)
+library(magrittr)
+library(dplyr)
+library(ggthemes)
+library(plotly)
+library(DT)
+library(stringr)
+library(plotly)
+library(RColorBrewer)
+library(scales)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(leaflet)
+```
+
+# Climate Indicators
+
+Decrease in weather related disasters: https://www.nationalgeographic.com/environment/article/weather-disaster-related-deaths-are-downwarming-could-undo-that-trend
+
+## Change throughout time
+```{r}
+lib
+year <- df %>% 
+  group_by(Year) %>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            average_temp = mean(tmean,na.rm=TRUE),
+            average_max_temp = mean(tmax,na.rm=TRUE),
+            average_min_temp = mean(tmin,na.rm=TRUE),
+            sum_freq = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE),
+            sum_no2 = sum(nitrousoxide_emissions,na.rm=TRUE)/1000000,
+            sum_co2 = sum(co2_emission,na.rm=TRUE)/1000000)
+ggplot(year, aes(x=Year)) +
+  geom_line(aes(y=average_temp)) +
+  geom_line(aes(y=sum_co2)) +
+  geom_line(aes(y=average_max_temp),color='red') +
+  geom_line(aes(y=average_min_temp),color='blue') + 
+  xlim(1980,2015) +
+  scale_y_continuous(name = "Temperature",
+    sec.axis = sec_axis( trans=~.*1000000, name="CO2 Emissions"))
+  
+```
+
+## Country Level Information
+```{r}
+countryfinal <- df %>% 
+  filter(Year>=2010&Year<=2015)%>%
+  group_by(Country) %>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            average_temp = mean(tmean,na.rm=TRUE),
+            sum_freq = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE),
+            average_perc_urban = mean(X..Urban.Population,na.rm=TRUE),
+            avg_gdp = mean(GDP),
+            avg_gdp_cap = mean(gdp_per_cap,na.rm=TRUE),
+            avg_temp = mean(tmean,na.rm=TRUE),
+            average_perc_arable = mean(perc_arable_land_area, na.rm=TRUE),
+            average_food_prod = mean(Food.Production, na.rm=TRUE),
+            average_pop = mean(Population,na.rm=TRUE),
+            avg_life_exp = mean(Life.Expectancy,na.rm=TRUE),
+            avg_perc_forest = mean(perc_forest_land_area,na.rm=TRUE),
+            avg_perc_energy_ren = mean(X..Final.Energy.from.Renewables,na.rm=TRUE),
+            avg_co2 = mean(co2_emission,na.rm=TRUE),
+            avg_remittances = mean(remittances_received,na.rm=TRUE),
+            avg_elect_days = mean(days_for_electricity,na.rm=TRUE),
+            average_max_temp = mean(tmax,na.rm=TRUE),
+            average_min_temp = mean(tmin,na.rm=TRUE))
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+world_map <- merge(world, countryfinal, by.x="name", by.y="Country")
+
+population_data<-na.omit(df[,c('Country','Year','Population')])%>% 
+  group_by(Country) %>%
+  slice(which.max(Year))
+
+world_map <- merge(world_map,population_data,by.x='name',by.y='Country')
+
+labels <- paste(
+  "<strong>",world_map$name,"</strong><br/>Average Temperature",round(world_map$avg_temp,2),"C",
+  "<br/>Maximum Temperature",round(world_map$average_max_temp,2), "C",
+  "<br/>Minimum Temperature",round(world_map$average_min_temp,2), "C",
+  "<br/>Total Deaths from Disasters",round(world_map$sum_freq,2)
+) %>% lapply(htmltools::HTML)
+
+leaflet(world_map)%>%
+ addPolygons(stroke = TRUE, smoothFactor = 0.5,
+  weight=1, color='#333333', opacity=1, 
+  fillColor = ~colorQuantile("Greens", avg_temp)(avg_temp), 
+  fillOpacity = 1,
+  highlightOptions = highlightOptions(
+    weight = 3,
+    fillOpacity = 0.7,
+    bringToFront = TRUE),
+  popup = labels)
+```
+
+# Climate Disasters
+
+```{r}
+df1 <- df[, c('Country', 'Year', 'gdp_per_cap', 'Total.Deaths','Frequency')]
+
+x <- df1 %>%
+  filter(Year>="2010" , Year <="2015") %>%
+ group_by(Year) %>%
+  summarize(totaldeathcount = sum(Total.Deaths, na.rm=TRUE),
+            totalfrequency = sum(Frequency, na.rm=TRUE),
+            avggdp = mean(gdp_per_cap, na.rm=TRUE)
+            )
+
+```
+
+# Climate Disasters
+## Total amount of disasters and total deaths throughout the last 20 years
+
+
+
+## Countries affected most by climate related disasters based on total number of deaths from 2010 to 2015
+```{r}
+require(gridExtra)
+death <- df %>%
+  filter(Year>=2010&Year<=2015) %>%
+    group_by(Country,Year) %>%
+    summarize(total_deaths =sum(Total.Deaths,na.rm=TRUE)) %>%
+    arrange(desc(total_deaths))
+
+
+plot1 <- ggplot(ten, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab('Countries') +ylab(' ') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+plot2 <- ggplot(eleven, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
+plot3 <- ggplot(twelve, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
+plot4 <- ggplot(thirt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab('Countries') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+plot5 <- ggplot(fourt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+plot6 <- ggplot(five, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+
+grid.arrange(plot1, plot2, plot3,plot4,plot5,plot6, ncol=3,nrow=2, 
+             top='Top 10 Climate Disasters by Total Number of Deaths per Year') 
+
+```
+total deaths in k
+# GHG Emissions
+
+sehrish no2 and co2
+
+# Wellbeing
+
+## Forest Land Area to Arable Land used for Agriculture Area per Country Based on GDP
+```{r}
+ggplot(countryfinal,aes(y=avg_perc_forest,x=average_perc_arable)) + 
+  geom_smooth(method = lm, se = FALSE) + 
+  geom_point(aes(size=avg_gdp)) + 
+  ggtitle("Average Percent Arable Land to Average Percent Forest Area per Country of Years 2010 to 2015 and GDP") +
+  xlab("Average Arable Land Percent per Country") + 
+  ylab('Average Forest Land Percent per Country') +
+  theme_minimal() +
+  labs(size='Average GDP')
+```
+
+# Climate Indicators and Disasters
+
+## Temperature and Disasters
+Higher temperature has a positive trend with higher number of disasters in addition to  higher number of deaths and those affected by disasters.
+```{r}
+labels <- c("# Disasters" , "# Deaths" , "# Affected")
+colors <- c('orange','red','purple')
+temp_to_dis <- df %>% 
+  group_by(tmean) %>%
+  summarize(num_disaster = sum(Frequency,na.rm=TRUE),
+            total_deaths = sum(Total.Deaths,na.rm=TRUE)/1000,
+            total_affected = sum(Total.Affected,na.rm=TRUE)/1000000)
+molten.temp <- melt(data.frame(temp_to_dis), id = c("tmean"))
+ggplot(molten.temp,aes(x=tmean,y=value,color=variable)) + 
+  geom_smooth(method = lm, se = FALSE) +
+  scale_color_manual(name = "Y series", labels = labels, 
+                     values = colors) + 
+  ggtitle("Temperature vs Disaster Effects")
+```
+
+# Climate Disasters and Wellbeing
+
+```{r}
+countryfinal2 <- merge(countryfinal,population_data,by.x='Country',by.y='Country')
+ggplot(countryfinal2,aes(y=avg_gdp,x=sum_death)) + 
+  geom_smooth(method = 'loess') + 
+  geom_point() + 
+  ggtitle("Number of Deaths from Disasters to Average GDP") +
+  xlab("Number of Deaths from Disasters") + 
+  ylab('Average GDP') +
+  theme_minimal()  + xlim(0,25000) +ylim(0,3800000000000)
+
+ggplot(countryfinal2,aes(y=avg_life_exp,x=sum_death)) + 
+  geom_smooth(method = 'loess') + 
+  geom_point() + 
+  ggtitle("Number of Deaths from Disasters to Life Expectancy") +
+  xlab("Number of Deaths from Disasters") + 
+  ylab('Life Expectancy') +
+  theme_minimal()  + xlim(0,26000) +ylim(45,90)
+```
+
+
+# Climate Indicators and Wellbeing
+sehrish 
+
+
+
+
+
+
+
+
+
+
+

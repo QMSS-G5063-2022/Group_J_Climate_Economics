@@ -37,77 +37,6 @@ library(leaflet)
 
 # Climate Indicators
 
-## Temperatures throughout time 
-
-
-# Climate Disasters
-
-```{r}
-df1 <- df[, c('Country', 'Year', 'gdp_per_cap', 'Total.Deaths','Frequency')]
-
-x <- df1 %>%
-  filter(Year>="2010" , Year <="2015") %>%
- group_by(Year) %>%
-  summarize(totaldeathcount = sum(Total.Deaths, na.rm=TRUE),
-            totalfrequency = sum(Frequency, na.rm=TRUE),
-            avggdp = mean(gdp_per_cap, na.rm=TRUE)
-            )
-
-```
-
-# Climate Disasters
-## Total amount of disasters and total deaths throughout the last 20 years
-
-```{r}
-ggplot(year, aes(x=Year)) +
-  geom_line(aes(y=average_temp)) +
-  geom_line(aes(y=sum_co2)) +
-  geom_line(aes(y=average_max_temp),color='red') +
-  geom_line(aes(y=average_min_temp),color='blue') + 
-  xlim(1980,2015) +
-  scale_y_continuous(name = "Temperature",
-    sec.axis = sec_axis( trans=~.*1000000, name="CO2 Emissions"))
-```
-
-
-## Countries affected most by climate related disasters based on total number of deaths from 2010 to 2015
-```{r}
-require(gridExtra)
-death <- df %>%
-  filter(Year>=2010&Year<=2015) %>%
-    group_by(Country,Year) %>%
-    summarize(total_deaths =sum(Total.Deaths,na.rm=TRUE)) %>%
-    arrange(desc(total_deaths))
-
-
-plot1 <- ggplot(ten, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab('Countries') +ylab(' ') +
-  theme(axis.title.x = element_text(size = 10),
-        axis.title.y = element_text(size=10))
-plot2 <- ggplot(eleven, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
-plot3 <- ggplot(twelve, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
-plot4 <- ggplot(thirt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab('Countries') +ylab('Total Deaths') +
-  theme(axis.title.x = element_text(size = 10),
-        axis.title.y = element_text(size=10))
-plot5 <- ggplot(fourt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
-  theme(axis.title.x = element_text(size = 10),
-        axis.title.y = element_text(size=10))
-plot6 <- ggplot(five, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
-  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
-  theme(axis.title.x = element_text(size = 10),
-        axis.title.y = element_text(size=10))
-
-grid.arrange(plot1, plot2, plot3,plot4,plot5,plot6, ncol=3,nrow=2, 
-             top='Top 10 Climate Disasters by Total Number of Deaths per Year') 
-
-```
-
-# Climate  
-
 Decrease in weather related disasters: https://www.nationalgeographic.com/environment/article/weather-disaster-related-deaths-are-downwarming-could-undo-that-trend
 
 ## Change throughout time
@@ -190,24 +119,107 @@ leaflet(world_map)%>%
   popup = labels)
 ```
 
-# GHG Emissions
+# Climate Disasters
 
 ```{r}
+df1 <- df[, c('Country', 'Year', 'gdp_per_cap', 'Total.Deaths','Frequency')]
+
+x <- df1 %>%
+  filter(Year>="2010" , Year <="2015") %>%
+ group_by(Year) %>%
+  summarize(totaldeathcount = sum(Total.Deaths, na.rm=TRUE),
+            totalfrequency = sum(Frequency, na.rm=TRUE),
+            avggdp = mean(gdp_per_cap, na.rm=TRUE)
+            )
+
+```
+
+# Climate Disasters
+## Total amount of disasters and total deaths throughout the last 20 years
+
+```{r}
+ggplot(year, aes(x=Year)) +
+  geom_line(aes(y=average_temp)) +
+  geom_line(aes(y=sum_co2)) +
+  geom_line(aes(y=average_max_temp),color='red') +
+  geom_line(aes(y=average_min_temp),color='blue') + 
+  xlim(1980,2015) +
+  scale_y_continuous(name = "Temperature",
+    sec.axis = sec_axis( trans=~.*1000000, name="CO2 Emissions"))
+```
+
+
+## Countries affected most by climate related disasters based on total number of deaths from 2010 to 2015
+```{r}
+require(gridExtra)
 death <- df %>%
   filter(Year>=2010&Year<=2015) %>%
     group_by(Country,Year) %>%
     summarize(total_deaths =sum(Total.Deaths,na.rm=TRUE)) %>%
     arrange(desc(total_deaths))
-death
+
+
+plot1 <- ggplot(ten, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab('Countries') +ylab(' ') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+plot2 <- ggplot(eleven, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
+plot3 <- ggplot(twelve, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab(' ')
+plot4 <- ggplot(thirt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab('Countries') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+plot5 <- ggplot(fourt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+plot6 <- ggplot(five, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab('Total Deaths') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10))
+
+grid.arrange(plot1, plot2, plot3,plot4,plot5,plot6, ncol=3,nrow=2, 
+             top='Top 10 Climate Disasters by Total Number of Deaths per Year') 
+
 ```
 
+# GHG Emissions
+
+
+
 # Wellbeing
+
+## Forest Land Area to Arable Land used for Agriculture Area per Country Based on GDP
+```{r}
+ggplot(countryfinal,aes(y=avg_perc_forest,x=average_perc_arable)) + 
+  geom_smooth(method = lm, se = FALSE) + 
+  geom_point(aes(size=avg_gdp)) + 
+  ggtitle("Average Percent Arable Land to Average Percent Forest Area per Country of Years 2010 to 2015 and GDP") +
+  xlab("Average Arable Land Percent per Country") + 
+  ylab('Average Forest Land Percent per Country') +
+  theme_minimal() +
+  labs(size='Average GDP')
+```
+
+# Climate Indicators and Disasters
+```{r}
+temp_to_dis <- df %>% 
+  group_by(tmean) %>%
+  summarize(num_disaster = sum(Frequency,na.rm=TRUE),
+            total_deaths = sum(Total.Deaths,na.rm=TRUE),
+            total_affected = sum(Total.Affected,na.rm=TRUE))
+ggplot(temp_to_dis,aes(x=tmean)) + 
+  geom_smooth(aes(y=num_disaster),method = lm, se = FALSE) #+
+  #geom_smooth(aes(y=total_deaths),method = lm, se = FALSE)
+```
 
 # Climate Disasters and Wellbeing
 
 # Climate Indicators and Wellbeing
 
-# Climate Indicators and Disasters
+
 
 
 
