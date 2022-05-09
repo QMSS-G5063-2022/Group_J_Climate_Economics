@@ -1,11 +1,14 @@
 # Group_J_Climate_Economics
+<b>Process Book</b>
+
+![image](https://user-images.githubusercontent.com/50467434/167332818-ddf212d0-47bb-4ef8-a051-318785efe2ad.png)
 
 <b>Title</b>: 
 Repercussions of Climate Change on Countries Worldwide
 
-Link to Rpubs website: https://rpubs.com/gamzeb/899975
+<b>Link to Rpubs website:</b> https://rpubs.com/gamzeb/899975
 
-Link to Group Presentation Video: https://www.loom.com/share/cfb247a52af247909165b4a0b54a4a88
+<b>Link to Group Presentation Video:</b> https://www.loom.com/share/cfb247a52af247909165b4a0b54a4a88
 
 <b>Abstract</b>:
 Our group is interested in how climate change has impacted countries around the world economically and in terms of development. Our research questions include:
