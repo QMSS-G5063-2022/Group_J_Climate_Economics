@@ -1,0 +1,639 @@
+---
+title: "Final Project"
+author: "Gamze Bilsen, Sierra Cheung, Sehrish Mastoor"
+date: "4/30/2022"
+output:
+  html_document:
+    toc: true
+    toc_depth: 6
+---
+```{r,message=FALSE, warning=FALSE,include = FALSE}
+library(devtools)
+library(dbplyr)
+library(dplyr)
+library(DT)
+library(ggpubr)
+library(forcats)
+library(geojsonsf)
+library(geometries)
+library(ggmap)
+library(ggplot2)
+library(ggrepel)
+library(ggthemes)
+library(htmlwidgets)
+library(leaflet)
+library(maps)
+library(magrittr)
+library(plotly)
+library(raster)
+library(RColorBrewer)
+library(readr)
+library(rgdal)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rvest)
+library(scales)
+library(sf)
+library(sp)
+library(stringr)
+library(tidymodels)
+library(tidyr)
+library(tidytext)
+library(tidyverse)
+library(tmap)
+library(MASS)
+library(reshape)
+library(reshape2)
+
+#vignette(package = "tmap") # available vignettes in tmap
+#vignette("tmap-nutshell")
+
+#devtools::install_github("rstudio/leaflet")
+```
+
+```{r,message=FALSE, include=FALSE}
+setwd("~/Documents/GitHub/Group_J_Climate_Economics/")
+finaldata <- read_csv('final_to_use.csv')
+df<- read_csv("final_to_use.csv")
+
+#Changing column names ahead of time to match everyone's code
+colnames(df)[5] <- 'Total.Deaths'
+colnames(df)[6] <- 'Total.Affected'
+colnames(df)[68] <- 'perc.Final.Energy.from.Renewables'
+colnames(df)[69] <- 'Urban.Population'
+colnames(df)[74] <- 'Food.Production'
+colnames(df)[82] <- 'Life.Expectancy'
+
+colnames(finaldata)[42] <- 'Arable.Land'
+colnames(finaldata)[82] <- 'Life.Expectancy'
+```
+
+# Introduction
+
+Climate change is defined as the long term shifts in world temperature and weather patterns, and some of the major contributors to this phenomenon are green house gas emissions, which absorb infrared radiation (e.g., light) and trap heat within the Earth's atmosphere. This thereby heats up the planet and contributes to global warming over time. Green house gases are a primary contributor to climate change. The purpose of this project is to see the different greenhouse gases and climate indicators and the relationship that they have with climate change. We focus on different countries and identify their greenhouse gas emissions to determine which nations are the greatest contributors to the worsening climate crisis. We also include assessments of these countries' economic and population well-being.
+
+Climate change is a very real threat to human well-being and has been scientifically proven to be the cause of natural disasters, droughts, air pollution, flooding and so on.. The changes in our landscapes will increasingly affect the well-being of many populations through higher instances of natural disasters such as drought or sea level rise. Climate change also contributes to larger, and more severe wildfires as well as increased flooding during hurricanes, which threatens the homes, and lives of humans and wildlife. Most of the vulnerable populations are in nations that have historically emitted the least, while the world's top emitters of greenhouse gases have not been as heavily impacted due to the fact that they have the correct infrastructure and resources to deal with climate catastrophes. 
+
+For our project, we're interested in bringing this inequality of current and future well-being to light by looking at changes in climate change indicators such as temperature and frequency of natural disasters and national well-being indicators such as life expectancy and GDP in conjunction with each country's contribution to the problem in the form of green house gas emissions.
+
+# Climate Indicators
+
+### Changes throughout time
+
+We thought it would be a great start to address the cognitive dissonance commonly observed in regards to climate change and global warming. There is a well-documented distinction between our actions and what we know, for example continuing to go with our day-to-day lives while refusing to acknowledge or appropriately address the accelerating threat to the Earth's well-being. However, the data has consistently shown that the Earth's climate is changing, and no degree of denial from governments or corporations can change that fact.
+
+In the graph above there is a clear increase in temperature from 1980 till 2015, which exhibits a clear correlation with the rise of Co2 Emissions worsening the temperature increases. When examining average, maximum and minimum temperatures there is a 1 degree Celsius increase in the temperatures. We believe this may surpass the 1.5 degree Celsius increase in temperatures before 2025, that were promised by country representatives at the Paris Agreement
+
+```{r,message=FALSE, warning=FALSE, include=FALSE}
+
+year <- df %>% 
+  group_by(Year) %>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            `Average Temperature` = mean(tmean,na.rm=TRUE),
+            `Maximum Temperature` = mean(tmax,na.rm=TRUE),
+            `Minimum Temperature` = mean(tmin,na.rm=TRUE),
+            `sum_freq` = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE),
+            sum_no2 = sum(nitrousoxide_emissions,na.rm=TRUE)/1000000,
+            CO2 = sum(co2_emission,na.rm=TRUE)/1000000)
+year2 <- year[,c('Average Temperature','Maximum Temperature','Minimum Temperature','CO2','Year')]
+year3 <- melt(year2, id='Year')
+g<-ggplot(year3, aes(x=Year,y=value,color=variable)) + geom_line() +
+  xlim(1980,2015) + ggtitle("Overtime Temperature shift and Co2 Emissions") +
+  scale_y_continuous(name = "Temperature (Celsius)",
+    sec.axis = sec_axis( trans=~.*1000000, name="Co2 Emissions in 100K kT"))  +
+    scale_color_manual(values=c('orange','red','light blue','dark blue'),
+                       labels=c("Average Temp", "Max Temp", "Min Temp",'Co2 Emissions')) +labs(colour = " ") + 
+  theme(legend.position="bottom")
+
+```
+```{r, message=FALSE, warning=FALSE}
+ggplotly(g)
+```
+
+## Emissions and Temperature{.tabset}
+
+Historically the high emitters are plotted in the graphs below. We explore countries that emit both carbon dioxide and nitrousoxide. We focus on the year 2015, as the data for the following years had many missing values. The graphs below focus on the Top 10 carbon dioxide emitters and nitrous oxide emitters against their mean temperature. There is an obvious contribution made by the largest economic powers in worsening the climate crisis, as is seen by the emissions from China, the US, and India. There is a clear correlation between high temperatures and high emission of greenhouse gasses for most countries, probably leading to increased frequency of climate related disasters in those countries.
+
+### Temperatures and CO2 emissions in 2015 
+
+```{r,message=FALSE, warning=FALSE, include=FALSE}
+## Mean temperature correlation with CO2 emissions for the year 2015 
+df1 <- df %>%
+    filter(Year == "2015") %>%
+    group_by(Country, tmean, co2_emission) %>% 
+    summarize(co2_emission) %>%
+    arrange(desc(co2_emission)) %>%
+    ungroup() %>%
+    slice(1:10)
+  
+## Mean temperature correlation with N.o2 emissions for the year 2015 
+df2 <- df %>%
+    filter(Year == "2015") %>%
+    group_by(Country, tmean, nitrousoxide_emissions) %>% 
+    summarize(nitrousoxide_emissions) %>%
+    arrange(desc(nitrousoxide_emissions)) %>%
+    ungroup() %>%
+    slice(1:10)
+
+
+t1 <- plot_ly(
+  data = df1,
+  x = ~tmean,
+  y = ~co2_emission,
+  legendtitle=TRUE,
+  type = "scatter",
+  mode = "markers",
+  color = ~Country,
+  colors = 'RdBu',
+  margin = 20,
+  marker = list(
+                size=20,
+                opacity=.9)
+  ) %>% 
+  layout( title = 'Highest Co2 Emissions with Mean Temperature',xaxis = list(title = 'Mean Temperature in degree Celsius'), yaxis = list(title = 'Co2 Emissions'))
+
+t1 <- t1 %>% layout(legend=list(title=list(text='<b> Countries </b>')))
+```
+```{r, message=FALSE, warning=FALSE}
+t1
+```
+
+### Mean Temperatures and Nitrous Oxide
+
+```{r,message=FALSE, warning=FALSE, include = FALSE}
+x <- plot_ly(
+  data = df2,
+  x = ~tmean,
+  y = ~nitrousoxide_emissions,
+  type = "scatter",
+  mode = "markers",
+  color = ~Country,
+  colors = 'RdYlBu',
+  marker = list(
+                size=20,
+                opacity=.9)
+  ) %>% 
+  layout(title = 'Highest Nitrous Oxide Emissions with Mean Temperature',xaxis = list(title = 'Mean Temperature in degree Celsius'),
+         yaxis = list(title = 'Nitrous Oxide Emissions'))
+   
+x <- x %>% layout(legend=list(title=list(text='<b> Countries </b>')))
+```
+```{r, message=FALSE, warning=FALSE}
+x
+```
+
+### GDP and Temperature
+
+The map below shows the relationship between average temperature, average GDP, total disasters and total death count. There is a clear correlation between lower average GDP and higher temperatures and higher death count. The line on the plot shows to us that higher GDP nations have lower temperature, reinforcing the fact that the negative impact of climate is distributed amongst the world, whereas the benefits may not be.
+```{r,message=FALSE, warning=FALSE, include=FALSE}
+# GDP per capita with total deaths Frequency 
+
+df1 <- df[, c('Country', 'Year', 'gdp_per_cap', 'Total.Deaths','Frequency','tmean')]
+
+x <- df1 %>%
+  filter(Year>=2010 , Year <=2015) %>%
+  #group_by(gdp_per_cap, Total Deaths,Frequency) %>% 
+  group_by(Country) %>%
+  summarize('Total Death Count' = sum(`Total.Deaths`, na.rm=TRUE),
+            'Total Frequency' = sum(Frequency, na.rm=TRUE),
+            'Average GDP' = mean(gdp_per_cap, na.rm=TRUE),
+            'Average Temperature' = mean(tmean,na.rm=TRUE)
+            )
+
+s<- ggplot(x,aes(y=`Average GDP`,x= `Average Temperature`)) + 
+  geom_smooth(method = lm, se = FALSE) + 
+  geom_point(aes(size=`Total Frequency`, colour= `Total Death Count`, alpha=14)) + 
+  ggtitle("Relationship between GDP and Temperature") + xlab("Mean Temperature in degree Celsius") +  ylab('Average GDP') +
+  theme_minimal() +
+  labs(size='Total Death Count') 
+```
+```{r, message=FALSE, warning=FALSE}
+ggplotly(s)
+```
+
+# Climate Disasters
+
+### Countries affected most by climate related disasters based on total number of deaths from 2010 to 2015
+
+Countries affected most by climate related disasters based on total number of deaths from 2010 to 2015
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+labels <- c("# Disasters" , "# Deaths in 1K" , "# Affected in 1M")
+colors <- c('orange','red','purple')
+temp_to_dis <- df %>% 
+  group_by(tmean) %>%
+  summarize('Number of Disasters' = sum(Frequency,na.rm=TRUE),
+            'Total Deaths' = sum(Total.Deaths,na.rm=TRUE)/1000,
+            'Total Affected' = sum(Total.Affected,na.rm=TRUE)/1000000)
+molten.temp <- melt(data.frame(temp_to_dis), id = c("tmean"))
+mtemp <- ggplot(molten.temp,aes(x=tmean,y=value,color=variable)) + 
+  geom_smooth(method = lm, se = FALSE) +
+  scale_color_manual(name = "Variable", labels = labels, 
+                     values = colors) + 
+  ggtitle("Average Temperature and Changes in Disaster Effects") + 
+  xlab('Mean Temperature') + ylab('Value')
+```
+```{r,message=FALSE, warning=FALSE}
+mtemp
+```
+
+### Climate Disasters and Death Counts
+
+We have graphed total climate disasters according to years. We focus on 2010 till 2015, and the graphed results show that developing nations are most impacted due to the climate change. This aligns with the fact that developing nations usually are the worst impacted by actions of the developed nations. China and India are present in all the graphs, whereas the United States is present in 4 of them. These results show that lower emitters are clearly impacted by the actions of higher emitters, although higher emitters are also seeing the negative results of their economic growth.
+
+Moreover, in the 2010 graph we removed Haiti as this was the year Haiti faced an earthquake, and by keeping Haiti in our graph it would wash out and minimize the climate effects seen in other countries. The earthquake was an uncommon incident therefore we removed it to be able to portray the negative impact of climate change.
+
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+require(gridExtra)
+death <- df %>%
+  filter(Year>=2010&Year<=2015) %>%
+    group_by(Country,Year) %>%
+    summarize(total_deaths =sum(Total.Deaths,na.rm=TRUE)) %>%
+    arrange(desc(total_deaths))
+co2df <- df %>%
+  filter(Year==2015) %>%
+    group_by(Country) %>%
+    summarize(total_co2 =sum(co2_emission,na.rm=TRUE)) 
+group <- data.frame(cut_number(co2df$total_co2, 3))
+colnames(group)<- c('groups')
+levels(group$groups) <- c("Low Emitter", "Average Emitter", 'High Emitter')
+co2df<- cbind(group,co2df)
+death<-merge(co2df,death,by.x='Country',by.y='Country')
+
+ten<-death %>% filter(Year==2010) %>% arrange(desc(total_deaths)) %>%ungroup()%>%slice(1:10)
+eleven<-death %>% filter(Year==2011) %>% arrange(desc(total_deaths)) %>%ungroup()%>%slice(1:10)
+twelve<-death %>% filter(Year==2012) %>% arrange(desc(total_deaths)) %>%ungroup()%>%slice(1:10)
+thirt<-death %>% filter(Year==2013) %>% arrange(desc(total_deaths)) %>%ungroup()%>%slice(1:10)
+fourt<-death %>% filter(Year==2014) %>% arrange(desc(total_deaths)) %>%ungroup()%>%slice(1:10)
+five<-death %>% filter(Year==2015) %>% arrange(desc(total_deaths)) %>%ungroup()%>%slice(1:10)
+
+ten$total_deaths<-ten$total_deaths/1000
+eleven$total_deaths<-eleven$total_deaths/1000
+twelve$total_deaths<-twelve$total_deaths/1000
+thirt$total_deaths<-thirt$total_deaths/1000
+fourt$total_deaths<-fourt$total_deaths/1000
+five$total_deaths<-five$total_deaths/1000
+
+plot1 <- ggplot(ten, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab('Countries') +ylab(' ') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10),
+        title = element_text(size=10))+ylim(0,21) + ggtitle('2010') +
+  theme(legend.position="none")
+plot2 <- ggplot(eleven, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab(' ')  +
+  theme(title = element_text(size=10)) + ggtitle('2011')+
+  theme(legend.position="none")
+plot3 <- ggplot(twelve, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab(' ')+ylim(0,21)  +
+  theme(title = element_text(size=10)) + ggtitle('2012')+
+  theme(legend.position="none")
+plot4 <- ggplot(thirt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab('Countries') + ylab('Deaths in Thousands') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10),
+        title = element_text(size=10))+ylim(0,21) + ggtitle('2013')+
+  theme(legend.position="none")
+plot5 <- ggplot(fourt, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab('Deaths in Thousands') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10),
+        title = element_text(size=10))+ylim(0,21)+ ggtitle('2014')+
+  theme(legend.position="none")
+plot6 <- ggplot(five, aes(y=total_deaths, x=reorder(Country, desc(total_deaths), fill = Country, color_continuous_scale=scale))) + 
+  geom_col() + coord_flip() +xlab(' ') +ylab('Deaths in Thousands') +
+  theme(axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size=10),
+        title = element_text(size=10)) +ylim(0,21)+ ggtitle('2015')+
+  theme(legend.position="none")
+
+```
+```{r, messge=TRUE, warning=FALSE}
+grid.arrange(plot1, plot2, plot3,plot4,plot5,plot6, ncol=3,nrow=2, 
+             top='Top 10 Climate Disasters by Total Number of Deaths per Year') 
+```
+
+### Worldwide Temperatures and Natural Disaster Deaths
+
+The Map below shows the temperature averages alongside the max and minimum to show temperature ranges between the year.  The pop up also displays total deaths from disasters. The graph is coloured according to the average temperature to identify whether there is really a relationship between temperatures and total deaths. 
+```{r,message=FALSE, warning=FALSE, include=FALSE}
+countryfinal <- df %>% 
+  filter(Year>=2010&Year<=2015)%>%
+  group_by(Country) %>%
+  summarize(sum_death = sum(Total.Deaths,na.rm=TRUE),
+            sum_affected = sum(Total.Affected, na.rm=TRUE),
+            affected_to_death = sum(Total.Deaths/Total.Affected,na.rm=TRUE),
+            average_temp = mean(tmean,na.rm=TRUE),
+            sum_freq = sum(Frequency,na.rm=TRUE),
+            avg_gdp_cap_growth = mean(gdp_per_cap_growth, na.rm=TRUE),
+            average_perc_urban = mean(Urban.Population, na.rm=TRUE),
+            avg_gdp = mean(GDP),
+            avg_gdp_cap = mean(gdp_per_cap,na.rm=TRUE),
+            avg_temp = mean(tmean,na.rm=TRUE),
+            average_perc_arable = mean(perc_arable_land_area, na.rm=TRUE),
+            average_food_prod = mean(Food.Production, na.rm=TRUE),
+            average_pop = mean(Population,na.rm=TRUE),
+            avg_life_exp = mean(Life.Expectancy,na.rm=TRUE),
+            avg_perc_forest = mean(perc_forest_land_area,na.rm=TRUE),
+            avg_perc_energy_ren = mean(perc.Final.Energy.from.Renewables,na.rm=TRUE),
+            avg_co2 = mean(co2_emission,na.rm=TRUE),
+            avg_remittances = mean(remittances_received,na.rm=TRUE),
+            avg_elect_days = mean(days_for_electricity,na.rm=TRUE),
+            average_max_temp = mean(tmax,na.rm=TRUE),
+            average_min_temp = mean(tmin,na.rm=TRUE),
+            average_rural_pop = mean(`Percent Rural Pop`,na.rm=TRUE),
+            average_urban_pop = mean(`% Urban Population`,na.rm=TRUE),
+            mean_gdp_per_cap = mean(gdp_per_cap,na.rm=TRUE))
+
+world <- ne_countries(scale = "medium", returnclass = "sf")
+world_map <- merge(world, countryfinal, by.x="name", by.y="Country")
+
+population_data<-na.omit(df[,c('Country','Year','Population')])%>% 
+  group_by(Country) %>%
+  slice(which.max(Year))
+
+world_map <- merge(world_map,population_data,by.x='name',by.y='Country')
+
+labels <- paste(
+  "<strong>",world_map$name,"</strong><br/>Average Temperature:",round(world_map$avg_temp,2),"C",
+  "<br/>Maximum Temperature:",round(world_map$average_max_temp,2), "C",
+  "<br/>Minimum Temperature:",round(world_map$average_min_temp,2), "C",
+  "<br/>Total Deaths from Disasters:",round(world_map$sum_freq,2)
+) %>% lapply(htmltools::HTML)
+
+
+temp_world_map <- leaflet(world_map)%>%
+ addPolygons(stroke = TRUE, smoothFactor = 0.5,
+  weight=1, color='#333333', opacity=1, 
+  fillColor = ~colorQuantile("Blues", avg_temp)(avg_temp), 
+  fillOpacity = 1,
+  highlightOptions = highlightOptions(
+    weight = 3,
+    fillOpacity = 0.7,
+    bringToFront = TRUE),
+  popup = labels)
+```
+```{r, message=FALSE, warning=FALSE}
+temp_world_map
+```
+
+# GHG Emissions
+
+### CO2 Emitter Rankings Worldwide
+
+The map below shows 10 of the top and bottom CO2 emitters for they year the 2015. We can see that most of the highest emitters are economic powerhouses such as China and United States, and the lower emitters tend to mostly be island nations. We can also find the life expectancy and GDP for each country.
+```{r,message=FALSE, warning=FALSE, include=FALSE}
+top10co2 <- filter(finaldata, Year ==2015)%>%
+  group_by(Year, Country, co2_emission, Life.Expectancy, gdp_per_cap)%>%
+  summarize(count_co2=co2_emission, count_life=Life.Expectancy, count_gdp = gdp_per_cap) %>%
+  arrange(desc(co2_emission))%>%
+  ungroup()%>%
+  slice(1:10)
+
+bottom10co2 <- filter(finaldata, Year ==2015)%>%
+  group_by(Year, Country, co2_emission, Life.Expectancy, gdp_per_cap)%>%
+  summarize(count_co2=co2_emission, count_life=Life.Expectancy, count_gdp =gdp_per_cap) %>%
+  arrange(desc(-co2_emission))%>%
+  ungroup()%>%
+  slice(1:10)
+
+top10co2['rank'] <- 'Top 10 Emitter'
+bottom10co2['rank'] <- 'Bottom 10 Emitter'
+
+
+#binding top and bottom 10 co2 level countries
+top10_bottom10 <- rbind(top10co2, bottom10co2)
+
+#Longitude and latitudes for top and bottom 10 countries
+longitude <- c(116.20, #China
+               -77.02, #US
+               77.13, #India
+               138.25, #Japan
+               13.25, #Germany
+               45.00, #Saudi Arabia
+               -106.42, #Canada
+               113.10, #Indonesia
+               -51.92, #Brazil
+               -102.55, #Mexico
+               177.65, #tuvalu
+               166.3, #Nauru
+               -168.73, #Kiribati
+               -175.20, #Tonga
+               6.61, #Sao Tome and Principe
+               173, #Vanuatu
+               -171.00, #Marshall Islands
+                9.55, #Comoros
+                43.33, #Liechtenstein
+               -61.37) #Dominica
+
+latitude <- c(39.55, #China
+              39.91, #US
+              28.37, #India
+              36.20, #Japan
+              52.30, #Germany
+              23.88, #saudi Arabia
+              56.27, #Canada 
+              -6.09, #Indonesia
+              -14.47, #Brazil
+              23.63, #Mexico
+              -7.10, #tuvalu
+              -0.523, #Nauru
+              -3.37, #Kiribati
+              -21.10, #Tonga
+              0.16, #Sao Tome and Principe
+              -17.45, #Vanuatu
+              7.13, #Marshall Islands
+              47.08, #Comoros
+              -11.64, #Liechtenstein
+              15.41) #Dominica
+
+top10_bottom10['longitude'] <- longitude
+top10_bottom10['latitude'] <- latitude
+
+#adding pop-up contents
+popup_content <- paste("Country:",top10_bottom10$Country,"<br/>",
+                       "CO2 Emissions (Hundred Thou. KT):",(top10_bottom10$co2_emission)*1000,"<br/>",
+                       "2015 Life Expetancy (Years):",round(top10_bottom10$Life.Expectancy, digits = 3),"<br/>",
+                       "2015 GDP per capita:",top10_bottom10$gdp_per_cap,"<br/>")
+#assigning colors to countries
+pal = colorFactor("RdBu", domain = top10_bottom10$rank)
+color_avail = pal(top10_bottom10$rank)
+
+
+#plotting on world map
+top_bottom_10_emitters <- leaflet(top10_bottom10) %>%
+  addTiles() %>%
+  addCircleMarkers(lng = ~longitude, lat = ~latitude, group = "Country",
+                   fillColor=color_avail, stroke = TRUE, fillOpacity = 1, popup = popup_content)%>%
+  addLegend(pal = pal, values = ~top10_bottom10$rank, title = "CO2 Emitters")
+```
+```{r, message=FALSE, warning=FALSE}
+top_bottom_10_emitters
+```
+
+### Carbon dioxide Emissions from 2010 till 2015
+
+The plot below shows the exact levels of CO2 emissions of the top 10 emitters summed up from years 2010 to 2015. We can see a significant difference between the top three emitters, with China being significantly above US, and the US being significantly above India, then the emissions for each country slowly stalling off. Thus, there seems to be an acceleration in emission as we move up to the highest emitting countries, however this could be attributed to current and historic economic growth levels per capita.
+```{r,message=FALSE, warning=FALSE, include=FALSE}
+# Countries with the total highest Co2 Emissions from 2010 to 2015 
+co2 <- df %>%
+    filter(Year>="2010" , Year <="2015") %>%
+    group_by(Year, Country, co2_emission)
+
+totalco2 <- co2 %>% 
+    group_by(Year,Country, co2_emission) %>%
+    group_by(Country) %>%
+    summarize(Count = sum(co2_emission)) %>% 
+    arrange(desc(Count)) %>%
+    ungroup() %>%
+    slice(1:10)
+
+p1 <- plot_ly(
+  data = totalco2,
+  x = ~Count,
+  y = ~Country,
+  legendtitle=TRUE,
+  type = "scatter",
+  mode = "markers",
+  color = ~Country,
+  colors = 'RdBu',
+  margin = 20,
+  marker = list(
+                size=20,
+                opacity=.9)
+  ) %>% 
+layout(yaxis = list(categoryorder = "total ascending")) %>% 
+  layout( title = 'Countries Carbon dioxide Emissions from 2010 till 2015',xaxis = list(title = 'Carbon dioxide levels'), yaxis = list(title = 'Countries '))
+
+p1 <- p1 %>% layout(legend=list(title=list(text='<b> Countries </b>')))
+
+```
+```{r, message=FALSE, warning=FALSE}
+p1
+```
+
+# Country Wellbeing Plots
+
+### Economic and Population Wellbeing and CO2 Emissions
+
+Co2 emissions + GDP (how top 10 and bottom 10 GDP countries compare in CO2 emissions from 2010-2015)
+
+Below is a plot of the same top and bottom CO2 Emitters worldwide with their life expectancies. However, 4 of the lowest emitting countries were smaller island countries that did not have life expectancy data, which is why they are not included on the plot.
+```{r,message=FALSE, warning=FALSE, include=FALSE}
+library(plotly)
+plot3 <- plot_ly(top10_bottom10, x = ~Country, y = ~Life.Expectancy, 
+                 type = 'bar', color = ~rank, colors = "Reds") %>%
+  layout(xaxis = list(categoryorder = "total ascending")) %>% 
+  layout( title = 'Top and Bottom Co2 Emitters Worldwide according to Life Expectancy',xaxis = list(title = 'Country'), yaxis = list(title = "Life Expectancy"))
+
+plot3 <- plot3  %>% layout(legend=list(title=list(text='<b> Category </b>')))
+```
+```{r, message=FALSE, warning=FALSE}
+plot3
+```
+
+### GDP per capita worldwide
+
+The Map below shows the rural and urban population percentages alongside the GDP per capita. The graph is coloured according to GDP per capita which is a direct indicator of a countries economic well being. We link this to rural and urban populations to see whether there is a connection.
+
+```{r,message=FALSE, warning=FALSE, include=FALSE}
+world_map1 <- merge(world, countryfinal, by.x="name", by.y="Country")
+
+population_data1<-na.omit(df[,c('Country','Year','Population')])%>% 
+  group_by(Country) %>%
+  slice(which.max(Year))
+
+world_map1 <- merge(world_map1,population_data1,by.x='name',by.y='Country')
+
+labels <- paste(
+  "<strong>",world_map1$name,"</strong><br/>Average GDP per capita:","$",round(world_map1$avg_gdp_cap,2),
+  "<br/>Urban Population:",round(world_map1$average_urban_pop,2), "%",
+  "<br/>Rural Population:",round(world_map1$average_rural_pop,2), "%"
+) %>% lapply(htmltools::HTML)
+
+rural_urban_gdp <- leaflet(world_map1)%>%
+ addPolygons(stroke = TRUE, smoothFactor = 0.5,
+  weight=1, color='#333333', opacity=1, 
+  fillColor = ~colorQuantile("Greens", avg_gdp_cap)(avg_gdp_cap), 
+  fillOpacity = 1,
+  highlightOptions = highlightOptions(
+    weight = 3,
+    fillOpacity = 0.7,
+    bringToFront = TRUE),
+  popup = labels)
+```
+```{r, message=FALSE, warning=FALSE}
+rural_urban_gdp
+```
+
+### Arable Land for Top and Bottom CO2 Emitters
+
+Arable Land for Top and Bottom 10 CO2 Emitters
+The plot below shows countries that have less arable land tend to have emitted lower emissions except for China which despite its massive land area, they likely have forest and mountainous regions that cover most of the landmass. United States is the only country that seems to be balanced with being in the middle of the extreme values for both variables.
+```{r,message=FALSE, warning=FALSE, include=FALSE}
+dataco2 <- filter(finaldata, is.na('co2_emission') == FALSE)%>%
+  filter(Year > 2009, Year < 2016)%>%
+  group_by(Year, Country, co2_emission)
+
+dataco2 <- filter(finaldata, Year == 2015)%>%
+  group_by(Country, co2_emission, Arable.Land) %>%
+  summarize(count_co2=co2_emission, count_ar=Arable.Land) %>%
+  arrange(desc(co2_emission))%>%
+  ungroup()%>%
+  slice(1:10)
+
+#plotting co2 and arable land
+
+plot1  <- plot_ly(dataco2, x = ~count_co2, y = ~count_ar, 
+                 type = 'scatter',   color = ~Country,
+  colors = 'RdYlBu', marker = list( size=15,opacity=.9)) %>% 
+  layout( title = 'Countries Carbon dioxide Emissions from 2010 till 2015',xaxis = list(title = 'Average CO2 Emissions (Millions of Kilotons)'), yaxis = list(title = "Average Arable Land and CO2 Emissions"))
+
+plot1  <- plot1   %>% layout(legend=list(title=list(text='<b> Countries </b>')))
+
+```
+```{r, message=FALSE, warning=FALSE}
+plot1
+```
+
+### Arable Land and Percentage of Forested Land
+
+In the plot below we can explore the realtionship between arable and forested lands and we can see that countries with higher forested land have lower arable lands.
+```{r,message=FALSE, warning=FALSE, include=FALSE}
+arableland_gdp<- ggplot(countryfinal,aes(y=avg_perc_forest,x=average_perc_arable)) + 
+  geom_smooth(method = lm, se = FALSE) + 
+  geom_point(aes(size=mean_gdp_per_cap)) + 
+  ggtitle("Percent Arable to Forest per Country") +
+  xlab("Percent Land Arable") + 
+  ylab('Percent Land Forest') +
+  theme_minimal() +
+  labs(size='GDP per Capita',title='Arable Land and Percentage of Forested Land per Country' ) 
+```
+```{r,message=FALSE, warning=FALSE}
+
+arableland_gdp
+```
+
+# Thoughts and Insights
+Data Collection in different countries differ so how valuable is all the data when comparing to developing nations and developed nation.
+There is a clear inequity between emitters and the impacted nations, so having more valuable data would help us delve into this deeper.
+
+
+### Data Description
+Climate disasters data is from EMDAT (The International Disaster Database). We conducted null value imputation using KNN regression; more information on the methodology can be found in out GitHub under the data_prep folder. 
+
+All of the other data including GHG emissions and well-being data is from the World Bank.
+
+Both datasets were merged using country and year information.
+
+
+
+
+
+
+
+
